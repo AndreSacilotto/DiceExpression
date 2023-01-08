@@ -9,31 +9,28 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 
 	private static ImmutableDictionary<Symbol, IToken> CreateSymbolsDict()
 	{
-		Category category;
+		var opt = new IToken[] {
+			new TokenBasic(Symbol.OpenBracket, Category.Bracket),
+			new TokenBasic(Symbol.CloseBracket, Category.Bracket),
+
+			new TokenUnary(Symbol.Floor, Category.UnaryFunction, T.Floor),
+			new TokenUnary(Symbol.Ceil, Category.UnaryFunction, T.Ceiling),
+			new TokenUnary(Symbol.Round, Category.UnaryFunction, T.Round),
+			new TokenUnary(Symbol.Sqtr, Category.UnaryFunction, T.Sqrt),
+
+			new TokenUnary(Symbol.Negate, Category.UnaryPreOperator, (a) => -a),
+
+			new TokenBinary(Symbol.Addition, Category.Operator, (a, b) => a + b) { Precedence = 2 },
+			new TokenBinary(Symbol.Subtraction, Category.Operator, (a, b) => a - b) { Precedence = 2 },
+			new TokenBinary(Symbol.Multiplication, Category.Operator, (a, b) => a * b) { Precedence = 4 } ,
+			new TokenBinary(Symbol.Division, Category.Operator, (a, b) => a / b) { Precedence = 4 } ,
+			new TokenBinary(Symbol.Remainer, Category.Operator, (a, b) => a % b) { Precedence = 4 } ,
+			new TokenBinary(Symbol.Pow, Category.Operator, T.Pow) { Precedence = 6, RightAssociativity = true },
+		};
+
 		var builder = ImmutableDictionary.CreateBuilder<Symbol, IToken>();
-
-		builder.Add(Symbol.OpenBracket, new TokenBasic(Category.OpenBracket));
-		builder.Add(Symbol.CloseBracket, new TokenBasic(Category.CloseBracket));
-
-		category = Category.UnaryFunction;
-		builder.Add(Symbol.Floor, new TokenUnary(category, T.Floor));
-		builder.Add(Symbol.Ceil, new TokenUnary(category, T.Ceiling));
-		builder.Add(Symbol.Round, new TokenUnary(category, T.Round));
-		builder.Add(Symbol.Sqtr, new TokenUnary(category, T.Sqrt));
-
-		category = Category.UnaryPreOperator;
-		builder.Add(Symbol.Negate, new TokenUnary(category, (a) => -a));
-
-		category = Category.UnaryPosOperator;
-
-		category = Category.Operator;
-		builder.Add(Symbol.Addition, new TokenBinary(category, (a, b) => a + b) { Precedence = 2 });
-		builder.Add(Symbol.Subtraction, new TokenBinary(category, (a, b) => a - b) { Precedence = 2 });
-		builder.Add(Symbol.Multiplication, new TokenBinary(category, (a, b) => a * b) { Precedence = 4 } );
-		builder.Add(Symbol.Division, new TokenBinary(category, (a, b) => a / b) { Precedence = 4 } );
-		builder.Add(Symbol.Remainer, new TokenBinary(category, (a, b) => a % b) { Precedence = 4 } );
-		builder.Add(Symbol.Pow, new TokenBinary(category, T.Pow) { Precedence = 6, RightAssociativity = true });
-
+		foreach (var item in opt)
+			builder.Add(item.Symbol, item);
 		return builder.ToImmutable();
 	}
 
@@ -57,7 +54,6 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 				}
 				case Category.UnaryPreOperator:
 				case Category.UnaryFunction:
-				case Category.OpenBracket:
 				{
 					stack.Push(token);
 					break;
@@ -78,9 +74,15 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 					stack.Push(token);
 					break;
 				}
-				case Category.CloseBracket:
+				case Category.Bracket:
 				{
-					while (stack.Peek().Category != Category.OpenBracket)
+					if (token.Symbol == Symbol.OpenBracket)
+					{
+						stack.Push(token);
+						break;
+					}
+
+					while (stack.Peek().Symbol != Symbol.OpenBracket)
 						queue.Enqueue(stack.Pop());
 
 					//Remove Close Bracket 
@@ -140,8 +142,7 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 					stack.Push(tk);
 					break;
 				}
-				case Category.OpenBracket:
-				case Category.CloseBracket:
+				case Category.Bracket:
 				throw new Exception("Postfix cant contain brackets");
 				default:
 				throw new Exception($"The token of {token.Category} category dont exist");
@@ -158,4 +159,3 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 	}
 
 }
-
