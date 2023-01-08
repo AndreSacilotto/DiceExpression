@@ -1,7 +1,8 @@
 ﻿
 using Number = System.Double;
 
-using static DiceExpression.src.ShuntingYard.DiceShuntingYard<double>;
+using static DiceExpression.DiceShuntingYard<double>;
+using System.Globalization;
 
 namespace DiceExpression;
 
@@ -15,12 +16,16 @@ public partial class DiceExpression
 	private IToken[] infix;
 	private IToken[] postfix;
 
+	private string internalExpression;
+
 	public DiceExpression(string expression)
 	{
-		expression = CleanExpression(expression);
-		infix = TokenizeExpression(expression).ToArray();
+		internalExpression = CleanExpression(expression);
+		infix = TokenizeExpression(internalExpression).ToArray();
 		postfix = InfixToPostfix(infix);
 	}
+
+	public override string ToString() => internalExpression;
 
 	private static string CleanExpression(string expression)
 	{
@@ -29,15 +34,21 @@ public partial class DiceExpression
 
 		expression = expression.Trim().ToLowerInvariant();
 		expression = whitespaceRegex.Replace(expression, "");
-		expression = expression.Replace("+-", "-").Replace("-+", "-").Replace("--", "+");
+		expression = expression.Replace("+-", "-").Replace("-+", "-").Replace("--", "+").Replace("++", "+");
 		return expression;
 	}
 
-	private static bool IsNumberSeparator(char ch) => ch == '.' || ch == ',';
 
 	public double Evaluate() => EvaluatePostfixTokens(postfix);
 	public static Queue<IToken> TokenizeExpression(string expression)
 	{
+		// Util
+		const char open = '(';
+		const char close = ')';
+		static bool IsNumberSeparator(char ch) => ch == '.' || ch == ',';
+		static bool IsName(char ch) => char.IsLetter(ch) || ch == '_';
+
+		// Algoritm
 		Queue<IToken> match = new(3);
 		StringBuilder buffer = new(5);
 
@@ -51,50 +62,75 @@ public partial class DiceExpression
 			{
 				bool isFloat = IsNumberSeparator(ch);
 				buffer.Append(ch);
-				for (int j = i + 1; j < expression.Length; i++, j++)
+				//look-ahead for more decimals
+				for (int j = i + 1; j < expression.Length; j++, i++)
 				{
 					ch = expression[j];
-					if (IsNumberSeparator(ch))
+					if (char.IsNumber(ch))
+						buffer.Append(ch);
+					else if (IsNumberSeparator(ch))
 					{
 						if (isFloat)
-							throw new Exception("Invalid number format");
+							throw new Exception("Invalid number format, too many number separators ('.' or ',')");
 						isFloat = true;
+						buffer.Append('.');
 					}
-					else if (!char.IsNumber(ch))
+					else
 						break;
-					buffer.Append(ch);
 				}
-
-				var value = double.Parse(buffer.ToString());
+				// Parse
+				var value = double.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
 				match.Enqueue(new TokenNumber(value));
 				buffer.Clear();
 			}
-			else if (ch == '(')
+			else if (ch == open)
 				match.Enqueue(Symbols[Symbol.OpenBracket]);
-			else if (ch == ')')
+			else if (ch == close)
 				match.Enqueue(Symbols[Symbol.CloseBracket]);
-			else if (char.IsLetter(ch))
-			{
-
-			}
-			else if (ch == '+')
-			{
-				match.Enqueue(Symbols[Symbol.Addition]);
-			}
-			else if (ch == '-')
-			{
-				match.Enqueue(Symbols[Symbol.Subtraction]);
-			}
 			else if (ch == '*')
 				match.Enqueue(Symbols[Symbol.Multiplication]);
 			else if (ch == '/')
 				match.Enqueue(Symbols[Symbol.Division]);
 			else if (ch == '^')
-				match.Enqueue(Symbols[Symbol.Power]);
+				match.Enqueue(Symbols[Symbol.Pow]);
+			else if (ch == '+')
+			{
+				//TODO: CHECK UNARY
+				match.Enqueue(Symbols[Symbol.Addition]);
+			}
+			else if (ch == '-')
+			{
+				//TODO: CHECK UNARY
+				match.Enqueue(Symbols[Symbol.Subtraction]);
+			}
+			else if (IsName(ch))
+			{
+				//TODO: LETTER OPERATORS
+
+				buffer.Append(ch);
+				//look-ahead
+				for (int j = i + 1; j < expression.Length; j++, i++)
+				{
+					ch = expression[j];
+					if (ch == open)
+						break;
+					buffer.Append(ch);
+				}
+
+				var str = buffer.ToString();
+				buffer.Clear();
+
+				//Find Func
+				if (str == "floor")
+					match.Enqueue(Symbols[Symbol.Floor]);
+				else if (str == "ceil")
+					match.Enqueue(Symbols[Symbol.Ceil]);
+				else
+					throw new Exception($"The funtion \"{str}\" dont exist");
+			}
 			else
 				throw new Exception($"Invalid character {ch}");
 
-			//ch = char.ToLowerInvariant(ch);
 		}
 
 		return match;

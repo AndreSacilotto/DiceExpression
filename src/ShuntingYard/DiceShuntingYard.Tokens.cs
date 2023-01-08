@@ -11,20 +11,19 @@ public static partial class DiceShuntingYard<T>
 		UnaryPreOperator,
 		UnaryPosOperator,
 		Operator,
-		Function,
-		Bracket,
+		UnaryFunction,
+		OpenBracket,
+		CloseBracket,
 	};
 
 	public enum Symbol : byte
 	{
-		Number = 1,
-
 		/* Operators */
 		Addition,
 		Subtraction,
 		Multiplication,
 		Division,
-		Power,
+		Pow,
 		Remainer,
 
 		/* Unary Operators */
@@ -33,8 +32,8 @@ public static partial class DiceShuntingYard<T>
 		/* Unary Funcs */
 		Floor,
 		Ceil,
-		//Round,
-		//Sqtr,
+		Round,
+		Sqtr,
 
 		/* Brackets */
 		OpenBracket,
@@ -51,23 +50,21 @@ public static partial class DiceShuntingYard<T>
 	public interface IToken
 	{
 		Category Category { get; }
-		Symbol Symbol { get; }
 	}
+
 	public class TokenNumber : IToken
 	{
 		public Category Category => Category.Number;
-		public Symbol Symbol => Symbol.Number;
 
 		public TokenNumber(T number) => Number = number;
 		public T Number { get; }
-		public override string ToString() => "" + Number.ToString();
+		public override string ToString() => Number.ToString() ?? string.Empty;
 	}
 	public class TokenBasic : IToken
 	{
-		public TokenBasic(Symbol symbol, Category category)
+		public TokenBasic(Category category)
 		{
 			Category = category;
-			Symbol = symbol;
 		}
 
 		public Category Category { get; }
@@ -80,7 +77,7 @@ public static partial class DiceShuntingYard<T>
 		public delegate T UnaryFunc(T a);
 
 		public UnaryFunc UnaryFunction { get; }
-		public TokenUnary(Symbol symbol, Category category, UnaryFunc function) : base(symbol, category)
+		public TokenUnary(Category category, UnaryFunc function) : base(category)
 		{
 			UnaryFunction = function;
 		}
@@ -88,13 +85,17 @@ public static partial class DiceShuntingYard<T>
 	public class TokenBinary : TokenBasic
 	{
 		public delegate T BinaryFunc(T a, T b);
-		public TokenBinary(Symbol symbol, Category category, BinaryFunc function) : base(symbol, category)
+
+		public TokenBinary(Category category, BinaryFunc binaryFunction) : base(category)
 		{
-			BinaryFunction = function;
+			BinaryFunction = binaryFunction;
 		}
+
 		public BinaryFunc BinaryFunction { get; }
+
 		/// <summary> Priority of different operators </summary>
 		public int Precedence { get; init; }
+
 		/// <summary> 
 		/// Used to distinct the precedence of operators of same symbol.
 		/// <see langword="false"/> means left-associativity, <see langword="true"/> means right-associativity. 
