@@ -10,7 +10,7 @@ internal class Program
 {
 	static void Main()
 	{
-		var d = new DiceExpression("(9 + 1) * 2.5");
+		var d = new DiceExpression("(9 + 1) ^ 2");
 		Console.WriteLine(d.Evaluate());
 	}
 }
