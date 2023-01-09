@@ -5,37 +5,31 @@ global using System.Collections.Generic;
 global using System.Numerics;
 
 using System.Linq;
-using DiceExpression;
 
 using static System.Console;
 
-using from = System.UInt32;
-using to = System.Int32;
+namespace DiceExpression;
 
-
-var rng = new Random(1000);
-var i = from.MaxValue;
-WriteLine(MathTest<from, to>.GetC(i));
-WriteLine(MathTest<from, to>.GetT(i));
-WriteLine(MathTest<from, to>.GetS(i));
-WriteLine();
-
-public static class MathTest<TIn, TOut> where TOut : INumber<TOut> where TIn : INumber<TIn>
+internal class Program
 {
-	//public static T GetO(TIn value) => (T)(object)value;
-	public static TOut GetC(TIn value)
+	private static void Main()
 	{
-		try
+		var dices = new DiceExpression[]
 		{
-			return TOut.CreateChecked(value);
-		}
-		catch (ArithmeticException)
-		{
-			Write("ArithmeticException - ");
-		}
-		return TOut.Zero;
-	}
+			new("(11.25)"),
+			new("(9 + 1) * 2"),
+			new("(2.5 ^ 2.5)"),
+			new("ceil(2.5 ^ 2.5)"),
+			new("2d6"),
+		};
 
-	public static TOut GetT(TIn value) => TOut.CreateTruncating(value);
-	public static TOut GetS(TIn value) => TOut.CreateSaturating(value);
+		var width = dices.Max(x => x.ToString().Length);
+
+		foreach (var item in dices)
+		{
+			var equation = item.ToString().PadRight(width);
+			WriteLine($"{equation} = {item.Evaluate()}");
+		}
+
+	}
 }

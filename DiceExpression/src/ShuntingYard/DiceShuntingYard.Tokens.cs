@@ -10,6 +10,7 @@ public static partial class DiceShuntingYard<T>
 		Number,
 		Bracket,
 		Function,
+		FunctionArgs,
 		/// <summary>By default operators are considered binary</summary>
 		Operator,
 		UnaryPreOperator,
@@ -45,7 +46,7 @@ public static partial class DiceShuntingYard<T>
 		CloseBracket,
 
 		/* Dice */
-		//Roll, // 'XdY' Operator 
+		Dice, // 'XdY' Operator 
 		//KeepHighest, Func (dice, number to keep)
 		//KeepLowest, Func (dice, number to keep)
 		//Explode, Func (dice, number to keep)
@@ -64,6 +65,12 @@ public static partial class DiceShuntingYard<T>
 
 		public TokenNumber(T number) => Number = number;
 		public T Number { get; }
+
+		public bool IsFloatingPoint()
+		{
+			var t = typeof(T);
+			return t == typeof(double) || t == typeof(float) || t == typeof(Half);
+		}
 
 		public override string ToString() => "" + Number.ToString();
 	}

@@ -108,6 +108,8 @@ public partial class DiceExpression
 					match.Enqueue(Symbols[Symbol.Division]);
 				else if (ch == '^')
 					match.Enqueue(Symbols[Symbol.Pow]);
+				else if (ch == 'd')
+					match.Enqueue(Symbols[Symbol.Dice]);
 				else if (IsName(ch))
 				{
 					// #Unary-PreOperators
@@ -136,19 +138,23 @@ public partial class DiceExpression
 							match.Enqueue(Symbols[Symbol.Floor]);
 						else if (str == "ceil")
 							match.Enqueue(Symbols[Symbol.Ceil]);
-						else if (str == "abs")
+						else if (str == "round")
 							match.Enqueue(Symbols[Symbol.Abs]);
+						else if (str == "abs")
+							match.Enqueue(Symbols[Symbol.Round]);
+						else if (str == "sqtr")
+							match.Enqueue(Symbols[Symbol.Sqtr]);
 						else
 							throw new Exception($"The funtion \"{str}\" dont exist");
 					}
 				}
 				else
-					throw new Exception($"Expression is too short for the last opt");
+					throw new Exception($"Expression is too short");
 			}
 			// #Unary-PosOperator
 			else if (char.IsLetter(ch))
 			{
-				throw new NotImplementedException($"There is no Unary Pos Operator: {ch}");
+				throw new NotImplementedException($"There is no Unary Pos Operator '{ch}'");
 			}
 			else
 				throw new Exception($"Invalid character {ch}");

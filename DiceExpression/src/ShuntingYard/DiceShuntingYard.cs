@@ -5,7 +5,7 @@ namespace DiceExpression;
 
 public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>, IPowerFunctions<T>, IRootFunctions<T>, IFloatingPoint<T>
 {
-	private static Random rng = new();
+	private static IRandom<T> rng = new GenericRandom<T>(1000);
 
 	public static ImmutableDictionary<Symbol, IToken> Symbols { get; } = CreateSymbolsDict();
 
@@ -30,7 +30,7 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 			new TokenBinary(Symbol.Remainer, Category.Operator, (a, b) => a % b) { Precedence = 4 } ,
 			new TokenBinary(Symbol.Pow, Category.Operator, T.Pow) { Precedence = 6, RightAssociativity = true },
 
-			//new TokenBinary(Symbol.Dice, Category.Operator, (from, to) => new DiceRoll(from, to).Roll<T>(rng) ) { Precedence = 10 },
+			new TokenBinary(Symbol.Dice, Category.Operator, (t, s) => new DiceRoll<T>(int.CreateChecked(t), s).Roll(rng) ) { Precedence = 10 },
 		};
 
 		var builder = ImmutableDictionary.CreateBuilder<Symbol, IToken>();
@@ -93,7 +93,7 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 					//Remove Close Bracket 
 					stack.Pop();
 
-					//If top of stack is from function
+					//If top of stack is t function
 					if (stack.TryPeek(out var peek) && peek.Category == Category.Function)
 						queue.Enqueue(stack.Pop());
 					break;
@@ -160,7 +160,7 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 			throw new Exception("Too many tokens on stack, invalid formula");
 		var result = stack.Pop();
 		if (result is not TokenNumber tn)
-			throw new Exception("Result token is not from number");
+			throw new Exception("Result token is not t number");
 		return tn.Number;
 	}
 
