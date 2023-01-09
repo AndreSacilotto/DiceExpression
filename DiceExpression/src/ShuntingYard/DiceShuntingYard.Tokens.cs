@@ -12,7 +12,7 @@ public static partial class DiceShuntingYard<T>
 		Function,
 		FunctionArgs,
 		/// <summary>By default operators are considered binary</summary>
-		Operator,
+		BinaryOperator,
 		UnaryPreOperator,
 		UnaryPosOperator,
 	};
@@ -20,6 +20,10 @@ public static partial class DiceShuntingYard<T>
 	public enum Symbol : byte
 	{
 		None = 0,
+
+		/* Brackets */
+		OpenBracket,
+		CloseBracket,
 
 		/* Binary Operators */
 		Addition,
@@ -34,19 +38,15 @@ public static partial class DiceShuntingYard<T>
 
 		/* Unary Pos Operators */
 
-		/* Unary Funcs */
+		/* Funcs */
 		Floor,
 		Ceil,
 		Round,
 		Sqtr,
 		Abs,
 
-		/* Brackets */
-		OpenBracket,
-		CloseBracket,
-
 		/* Dice */
-		Dice, // 'XdY' Operator 
+		Dice, // 'XdY' BinaryOperator 
 		//KeepHighest, Func (dice, number to keep)
 		//KeepLowest, Func (dice, number to keep)
 		//Explode, Func (dice, number to keep)
@@ -71,8 +71,7 @@ public static partial class DiceShuntingYard<T>
 			var t = typeof(T);
 			return t == typeof(double) || t == typeof(float) || t == typeof(Half);
 		}
-
-		public override string ToString() => "" + Number.ToString();
+		public override string ToString() => Number.ToString() + "";
 	}
 	public class TokenBasic : IToken
 	{

@@ -5,7 +5,7 @@ namespace DiceExpression;
 
 public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>, IPowerFunctions<T>, IRootFunctions<T>, IFloatingPoint<T>
 {
-	private static IRandom<T> rng = new GenericRandom<T>(1000);
+	private static IRandom<T, int> rng = new GenericRandom<T>(1000);
 
 	public static ImmutableDictionary<Symbol, IToken> Symbols { get; } = CreateSymbolsDict();
 
@@ -23,14 +23,14 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 
 			new TokenUnary(Symbol.Negate, Category.UnaryPreOperator, (a) => -a),
 
-			new TokenBinary(Symbol.Addition, Category.Operator, (a, b) => a + b) { Precedence = 2 },
-			new TokenBinary(Symbol.Subtraction, Category.Operator, (a, b) => a - b) { Precedence = 2 },
-			new TokenBinary(Symbol.Multiplication, Category.Operator, (a, b) => a * b) { Precedence = 4 } ,
-			new TokenBinary(Symbol.Division, Category.Operator, (a, b) => a / b) { Precedence = 4 } ,
-			new TokenBinary(Symbol.Remainer, Category.Operator, (a, b) => a % b) { Precedence = 4 } ,
-			new TokenBinary(Symbol.Pow, Category.Operator, T.Pow) { Precedence = 6, RightAssociativity = true },
+			new TokenBinary(Symbol.Addition, Category.BinaryOperator, (a, b) => a + b) { Precedence = 2 },
+			new TokenBinary(Symbol.Subtraction, Category.BinaryOperator, (a, b) => a - b) { Precedence = 2 },
+			new TokenBinary(Symbol.Multiplication, Category.BinaryOperator, (a, b) => a * b) { Precedence = 4 } ,
+			new TokenBinary(Symbol.Division, Category.BinaryOperator, (a, b) => a / b) { Precedence = 4 } ,
+			new TokenBinary(Symbol.Remainer, Category.BinaryOperator, (a, b) => a % b) { Precedence = 4 } ,
+			new TokenBinary(Symbol.Pow, Category.BinaryOperator, T.Pow) { Precedence = 6, RightAssociativity = true },
 
-			new TokenBinary(Symbol.Dice, Category.Operator, (t, s) => new DiceRoll<T>(int.CreateChecked(t), s).Roll(rng) ) { Precedence = 10 },
+			new TokenBinary(Symbol.Dice, Category.BinaryOperator, (t, s) => new DiceRoll<T, int>(int.CreateChecked(t), s).Roll(rng) ) { Precedence = 10 },
 		};
 
 		var builder = ImmutableDictionary.CreateBuilder<Symbol, IToken>();
@@ -63,17 +63,17 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 					stack.Push(token);
 					break;
 				}
-				case Category.Operator:
+				case Category.BinaryOperator:
 				{
 					var tk = (TokenBinary)token;
 					if (tk.RightAssociativity)
 					{
-						while (stack.TryPeek(out var peek) && peek.Category == Category.Operator && ((TokenBinary)peek).Precedence > tk.Precedence)
+						while (stack.TryPeek(out var peek) && peek.Category == Category.BinaryOperator && ((TokenBinary)peek).Precedence > tk.Precedence)
 							queue.Enqueue(stack.Pop());
 					}
 					else
 					{
-						while (stack.TryPeek(out var peek) && peek.Category == Category.Operator && ((TokenBinary)peek).Precedence >= tk.Precedence)
+						while (stack.TryPeek(out var peek) && peek.Category == Category.BinaryOperator && ((TokenBinary)peek).Precedence >= tk.Precedence)
 							queue.Enqueue(stack.Pop());
 					}
 					stack.Push(token);
@@ -128,7 +128,7 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 				case Category.UnaryPreOperator:
 				case Category.UnaryPosOperator:
 				case Category.Function:
-				case Category.Operator:
+				case Category.BinaryOperator:
 				{
 					IToken tk;
 					if (token is TokenUnary tu)

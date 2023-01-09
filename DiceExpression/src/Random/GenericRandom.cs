@@ -1,17 +1,17 @@
 ﻿namespace DiceExpression;
 
-public class GenericRandom<T> : IRandom<T> where T : unmanaged, INumber<T>
+public class GenericRandom<T> : IRandom<T, int> where T : unmanaged, INumber<T>
 {
 	private Random rng = null!;
-	private T seed;
+	private int seed;
 
-	public GenericRandom(int seed) => Seed = T.CreateChecked(seed);
+	public GenericRandom(int seed) => Seed = seed;
 
-	public T Seed
+	public int Seed
 	{
 		get => seed; set {
 			seed = value;
-			rng = new(int.CreateChecked(seed));
+			rng = new(seed);
 		}
 	}
 

@@ -26,6 +26,8 @@ public partial class DiceExpression
 		postfix = InfixToPostfix(infix);
 	}
 
+	public double Evaluate() => EvaluatePostfixTokens(postfix);
+
 	public override string ToString() => internalExpression;
 
 	private static string CleanExpression(string expression)
@@ -33,132 +35,163 @@ public partial class DiceExpression
 		if (string.IsNullOrWhiteSpace(expression))
 			throw new Exception("Empty Expression");
 
-		expression = expression.Trim().ToLowerInvariant();
-		expression = whitespaceRegex.Replace(expression, "");
-		expression = expression.Replace("+-", "-").Replace("-+", "-").Replace("--", "+").Replace("++", "+");
-		return expression;
+		expression = whitespaceRegex.Replace(expression, string.Empty);
+		var sb = new StringBuilder(expression.ToLowerInvariant());
+		return sb.Replace("+-", "-").Replace("-+", "-").Replace("--", "+").Replace("++", "+").ToString();
 	}
 
-	//Parse dice = "2d20" "10d6k2" "2d6x"
+	private const char OPEN_BRACKET = '(';
+	private const char CLOSE_BRACKET = ')';
+	private const char PARAMETER_SEPARATOR = ',';
+	private const char DECIMAL_SEPARATOR = '.';
+	private static bool IsName(char ch) => char.IsLetter(ch) || ch == '_';
+	private static bool IsNumeric(char ch) => char.IsNumber(ch) || ch == DECIMAL_SEPARATOR;
 
-	public double Evaluate() => EvaluatePostfixTokens(postfix);
 	public static Queue<IToken> TokenizeExpression(string expression)
 	{
-		// Util
-		const char open = '(';
-		const char close = ')';
-		static bool IsNumberSeparator(char ch) => ch == '.' || ch == ',';
-		static bool IsNumberF(char ch) => char.IsNumber(ch) || IsNumberSeparator(ch);
-		static bool IsName(char ch) => char.IsLetter(ch) || ch == '_';
-
 		// Algoritm
 		Queue<IToken> match = new(3);
 		StringBuilder buffer = new(5);
+		int bracketCount = 0;
 
 		var expLength = expression.Length;
 		for (int i = 0; i < expLength; i++)
 		{
 			char ch = expression[i];
 
-			var r = i + 1;
-			bool hasRight = r < expLength;
-
 			// #Number
-			if (IsNumberF(ch))
+			if (char.IsNumber(ch) || ch == DECIMAL_SEPARATOR)
 			{
-				bool isFloat = IsNumberSeparator(ch);
+				bool isFloat = false;
 				buffer.Append(ch);
-				//look-ahead for more decimals
-				for (r = i + 1; r < expLength; r++, i++)
+				//loop-ahead for more decimals
+				for (i++; i < expLength; i++)
 				{
-					ch = expression[r];
-					if (char.IsNumber(ch))
-						buffer.Append(ch);
-					else if (IsNumberSeparator(ch))
+					ch = expression[i];
+					if (ch == DECIMAL_SEPARATOR)
 					{
 						if (isFloat)
-							throw new Exception("Invalid number format, too many number separators ('.' or ',')");
+							throw new Exception("Invalid number format, too many decimal separators");
 						isFloat = true;
-						buffer.Append('.');
 					}
-					else
+					else if (!char.IsNumber(ch))
+					{
+						i--;
 						break;
+					}
+					buffer.Append(ch);
 				}
+
 				// Parse
 				var value = double.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
 				buffer.Clear();
+
 				match.Enqueue(new TokenNumber(value));
 			}
-			// #Brackets
-			else if (ch == open)
-				match.Enqueue(Symbols[Symbol.OpenBracket]);
-			else if (ch == close)
-				match.Enqueue(Symbols[Symbol.CloseBracket]);
-
-			else if (hasRight)
+			else
 			{
-				// #Bi-Operators
-				if (ch == '+')
-					match.Enqueue(Symbols[Symbol.Addition]);
-				else if (ch == '-')
-					match.Enqueue(Symbols[Symbol.Subtraction]);
-				else if (ch == '*')
-					match.Enqueue(Symbols[Symbol.Multiplication]);
-				else if (ch == '/')
-					match.Enqueue(Symbols[Symbol.Division]);
-				else if (ch == '^')
-					match.Enqueue(Symbols[Symbol.Pow]);
-				else if (ch == 'd')
-					match.Enqueue(Symbols[Symbol.Dice]);
-				else if (IsName(ch))
+				Symbol symbol;
+				int r = i + 1;
+
+				// #Brackets
+				if (ch == OPEN_BRACKET)
 				{
+					symbol = Symbol.OpenBracket;
+					bracketCount++;
+				}
+				else if (ch == CLOSE_BRACKET)
+				{
+					symbol = Symbol.CloseBracket;
+					bracketCount--;
+				}
+				else if (r < expLength) // hasRight
+				{
+					int l = i - 1;
+					bool hasLeft = l >= 0;
+					char chR = expression[r];
+					char chL = hasLeft ? expression[l] : '\0';
+
 					// #Unary-PreOperators
-					if (ch == '&' && expression[r] == '&')
+					if ((IsNumeric(chR) || chR == OPEN_BRACKET) && (i == 0 || (hasLeft && !IsNumeric(chL) && chL != CLOSE_BRACKET)))
 					{
-						throw new NotImplementedException($"{ch} is not implemented");
+						if (ch == '+')
+							continue;
+						else if (ch == '-')
+							symbol = Symbol.Negate;
+						else
+							throw new Exception($"There is no Unary Pre Operator {ch}");
+					}
+					// #Bi-Operators
+					else if (ch == '+')
+						symbol = Symbol.Addition;
+					else if (ch == '-')
+						symbol = Symbol.Subtraction;
+					else if (ch == '*')
+						symbol = Symbol.Multiplication;
+					else if (ch == '/')
+						symbol = Symbol.Division;
+					else if (ch == '%')
+						symbol = Symbol.Remainer;
+					else if (ch == '^')
+						symbol = Symbol.Pow;
+					else if (ch == 'd')
+						symbol = Symbol.Dice;
+					// #Bi-Operators with 2 letters
+					else if (ch == '&' && expression[r] == '&' && (i + 2) < expLength)
+					{
+						//i += 2;
+						throw new NotImplementedException($"{ch}{chR} is not implemented");
+					}
+					// #Unary-PosOperator
+					else if (hasLeft && IsNumeric(chL) && !IsNumeric(chR))
+					{
+						throw new NotImplementedException($"There is no Unary Pos BinaryOperator '{ch}'");
 					}
 					// #Funcs
-					else
+					else if (IsName(ch) && !IsNumeric(chL))
 					{
 						buffer.Append(ch);
-						//look-ahead for more text
-						for (; r < expLength; r++, i++)
+						//look-ahead for more text until find the bracket
+						for (i++; i < expLength; i++)
 						{
-							ch = expression[r];
-							if (ch == open)
+							ch = expression[i];
+							if (ch == OPEN_BRACKET)
+							{
+								i--;
 								break;
+							}
 							buffer.Append(ch);
 						}
 
-						var str = buffer.ToString();
-						buffer.Clear();
+						if (ch != OPEN_BRACKET)
+							throw new Exception("Function has no open bracket");
 
 						// Try find Func
-						if (str == "floor")
-							match.Enqueue(Symbols[Symbol.Floor]);
-						else if (str == "ceil")
-							match.Enqueue(Symbols[Symbol.Ceil]);
-						else if (str == "round")
-							match.Enqueue(Symbols[Symbol.Abs]);
-						else if (str == "abs")
-							match.Enqueue(Symbols[Symbol.Round]);
-						else if (str == "sqtr")
-							match.Enqueue(Symbols[Symbol.Sqtr]);
-						else
-							throw new Exception($"The funtion \"{str}\" dont exist");
+						var funcStr = buffer.ToString();
+						symbol = funcStr switch {
+							"floor" => Symbol.Floor,
+							"ceil" => Symbol.Ceil,
+							"round" => Symbol.Round,
+							"abs" => Symbol.Abs,
+							"sqtr" => Symbol.Sqtr,
+							_ => throw new Exception($"The funtion \"{funcStr}\" dont exist")
+						};
+
+						buffer.Clear();
 					}
+					else
+						throw new Exception($"Expression is too short");
 				}
 				else
-					throw new Exception($"Expression is too short");
+					throw new Exception($"Invalid character {ch}");
+
+				match.Enqueue(Symbols[symbol]);
 			}
-			// #Unary-PosOperator
-			else if (char.IsLetter(ch))
-			{
-				throw new NotImplementedException($"There is no Unary Pos Operator '{ch}'");
-			}
-			else
-				throw new Exception($"Invalid character {ch}");
+
 		}
+
+		if (bracketCount != 0)
+			throw new Exception("Not all brackets have been closed");
 
 		return match;
 	}

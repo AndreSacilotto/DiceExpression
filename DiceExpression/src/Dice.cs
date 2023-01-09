@@ -3,17 +3,17 @@
 namespace DiceExpression;
 
 
-public readonly struct DiceRoll<T> where T : unmanaged, INumber<T>
+public readonly struct DiceRoll<T, S> where T : unmanaged, INumber<T>
 {
 	public readonly int times;
-	public readonly Dice<T> dice;
+	public readonly Dice<T, S> dice;
 
-	public DiceRoll(int times, Dice<T> dice)
+	public DiceRoll(int times, Dice<T, S> dice)
 	{
 		this.times = times;
 		this.dice = dice;
 	}
-	public DiceRoll(int times, T sides) : this(times, new Dice<T>(sides)) { }
+	public DiceRoll(int times, T sides) : this(times, new Dice<T, S>(sides)) { }
 
 	public override string ToString() => ToString(false);
 	public string ToString(bool hideIfOne)
@@ -24,7 +24,7 @@ public readonly struct DiceRoll<T> where T : unmanaged, INumber<T>
 		return times + str;
 	}
 
-	public T Roll(IRandom<T> rng)
+	public T Roll(IRandom<T, S> rng)
 	{
 		T sum = T.Zero;
 		for (int i = 0; i < times; i++)
@@ -34,7 +34,7 @@ public readonly struct DiceRoll<T> where T : unmanaged, INumber<T>
 
 }
 
-public readonly struct Dice<T> where T : unmanaged, INumber<T>
+public readonly struct Dice<T, S> where T : unmanaged, INumber<T>
 {
 	public readonly T sides;
 
@@ -44,6 +44,6 @@ public readonly struct Dice<T> where T : unmanaged, INumber<T>
 
 	public double GetAverage() => double.CreateSaturating(sides + T.One) / 2.0;
 
-	public T Roll(IRandom<T> rng) => rng.Next(T.One, sides);
+	public T Roll(IRandom<T, S> rng) => rng.Next(T.One, sides);
 
 }
