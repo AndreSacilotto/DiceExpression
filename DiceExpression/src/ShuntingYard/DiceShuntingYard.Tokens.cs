@@ -7,19 +7,20 @@ public static partial class DiceShuntingYard<T>
 {
 	public enum Category : byte
 	{
-		Number = 1,
+		Number,
+		Bracket,
+		Function,
+		/// <summary>By default operators are considered binary</summary>
+		Operator,
 		UnaryPreOperator,
 		UnaryPosOperator,
-		Operator,
-		UnaryFunction,
-		Bracket,
 	};
 
 	public enum Symbol : byte
 	{
 		None = 0,
 
-		/* Operators */
+		/* Binary Operators */
 		Addition,
 		Subtraction,
 		Multiplication,
@@ -27,24 +28,27 @@ public static partial class DiceShuntingYard<T>
 		Pow,
 		Remainer,
 
-		/* Unary Operators */
+		/* Unary Pre Operators */
 		Negate,
+
+		/* Unary Pos Operators */
 
 		/* Unary Funcs */
 		Floor,
 		Ceil,
 		Round,
 		Sqtr,
+		Abs,
 
 		/* Brackets */
 		OpenBracket,
 		CloseBracket,
 
 		/* Dice */
-		//Roll,
-		//KeepHighest,
-		//KeepLowest,
-		//Explode,
+		//Roll, // 'XdY' Operator 
+		//KeepHighest, Func (dice, number to keep)
+		//KeepLowest, Func (dice, number to keep)
+		//Explode, Func (dice, number to keep)
 	}
 
 	#region Token
@@ -94,8 +98,9 @@ public static partial class DiceShuntingYard<T>
 		public int Precedence { get; init; } = 0;
 
 		/// <summary> 
-		/// Used to distinct the precedence of operators of same symbol.
-		/// <see langword="false"/> means left-associativity, <see langword="true"/> means right-associativity. 
+		/// Used to distinct the precedence/resolution of operators of same symbol. <br/>
+		/// <see langword="False"/> means left-associativity [left to right] (+ - / *), <br/>
+		/// <see langword="True"/> means right-associativity [right to left] (^ EE √).
 		/// </summary>
 		public bool RightAssociativity { get; init; } = false;
 	}
