@@ -14,12 +14,14 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 		var opt = new IToken[] {
 			new TokenBasic(Symbol.OpenBracket, Category.Bracket),
 			new TokenBasic(Symbol.CloseBracket, Category.Bracket),
+			new TokenBasic(Symbol.FunctionSeparator, Category.Bracket),
 
 			new TokenUnary(Symbol.Floor, Category.Function, T.Floor),
 			new TokenUnary(Symbol.Ceil, Category.Function, T.Ceiling),
 			new TokenUnary(Symbol.Round, Category.Function, T.Round),
 			new TokenUnary(Symbol.Sqtr, Category.Function, T.Sqrt),
 			new TokenUnary(Symbol.Abs, Category.Function, T.Abs),
+			new TokenBinary(Symbol.Mult, Category.Function, (a, b) => a * b),
 
 			new TokenUnary(Symbol.Negate, Category.UnaryPreOperator, (a) => -a),
 
@@ -82,20 +84,27 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 				case Category.Bracket:
 				{
 					if (token.Symbol == Symbol.OpenBracket)
-					{
 						stack.Push(token);
-						break;
+					else if (token.Symbol == Symbol.CloseBracket)
+					{
+						while (stack.Peek().Symbol != Symbol.OpenBracket)
+							queue.Enqueue(stack.Pop());
+
+						//Remove the Open Bracket 
+						stack.Pop();
+
+						//If top of stack is a function, output it
+						if (stack.TryPeek(out var peek) && peek.Category == Category.Function)
+							queue.Enqueue(stack.Pop());
 					}
+					else if (token.Symbol == Symbol.FunctionSeparator)
+					{
+						while (stack.Peek().Symbol != Symbol.OpenBracket)
+							queue.Enqueue(stack.Pop());
+					}
+					else
+						throw new Exception($"Invalid Bracket type {token.Category}");
 
-					while (stack.Peek().Symbol != Symbol.OpenBracket)
-						queue.Enqueue(stack.Pop());
-
-					//Remove Close Bracket 
-					stack.Pop();
-
-					//If top of stack is t function
-					if (stack.TryPeek(out var peek) && peek.Category == Category.Function)
-						queue.Enqueue(stack.Pop());
 					break;
 				}
 				default:
@@ -109,7 +118,6 @@ public static partial class DiceShuntingYard<T> where T : unmanaged, INumber<T>,
 		return queue.ToArray();
 	}
 
-	/// <summary>Evaluate the Postfix array</summary>
 	public static T EvaluatePostfixTokens(IToken[] postfixTokens)
 	{
 		var stack = new Stack<IToken>(3);

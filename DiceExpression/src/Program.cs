@@ -16,20 +16,13 @@ internal class Program
 	{
 		var dices = new DiceExpression[]
 		{
-			new("(11.25)"),
-			new("(9 + 1) * 2"),
-			new("(2.5 ^ 2.5)"),
-			new("ceil(2.5 ^ 2.5)"),
-			new("floor(3.5)"),
-			new("ceil((3+.5))"),
-			new("2d6"),
-			new("-10"),
-			new("(-2)-3"),
-			new("-(-4)"),
-			new("-(+(+6))"),
-			new("8-5+(-(3))"),
-			new("-30/-3"),
-			new("(-50)/-(-25)"),
+			//new("(11.25)"),
+			//new("(9 + 1) * 2"),
+			//new("(2.5 ^ 2.5)"),
+			//new("ceil(22.5)"),
+			//new("2d6"),
+			//new("-10/-20"),
+			new("mult(2, 2)"),
 		};
 
 		var width = dices.Max(x => x.ToString().Length);

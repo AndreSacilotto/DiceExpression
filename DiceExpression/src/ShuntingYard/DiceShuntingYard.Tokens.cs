@@ -10,7 +10,6 @@ public static partial class DiceShuntingYard<T>
 		Number,
 		Bracket,
 		Function,
-		FunctionArgs,
 		/// <summary>By default operators are considered binary</summary>
 		BinaryOperator,
 		UnaryPreOperator,
@@ -24,6 +23,7 @@ public static partial class DiceShuntingYard<T>
 		/* Brackets */
 		OpenBracket,
 		CloseBracket,
+		FunctionSeparator,
 
 		/* Binary Operators */
 		Addition,
@@ -44,6 +44,7 @@ public static partial class DiceShuntingYard<T>
 		Round,
 		Sqtr,
 		Abs,
+		Mult,
 
 		/* Dice */
 		Dice, // 'XdY' BinaryOperator 

@@ -40,15 +40,15 @@ public partial class DiceExpression
 		return sb.Replace("+-", "-").Replace("-+", "-").Replace("--", "+").Replace("++", "+").ToString();
 	}
 
-	private const char OPEN_BRACKET = '(';
-	private const char CLOSE_BRACKET = ')';
-	private const char PARAMETER_SEPARATOR = ',';
-	private const char DECIMAL_SEPARATOR = '.';
-	private static bool IsName(char ch) => char.IsLetter(ch) || ch == '_';
-	private static bool IsNumeric(char ch) => char.IsNumber(ch) || ch == DECIMAL_SEPARATOR;
-
 	public static Queue<IToken> TokenizeExpression(string expression)
 	{
+		const char OPEN_BRACKET = '(';
+		const char CLOSE_BRACKET = ')';
+		const char PARAMETER_SEPARATOR = ',';
+		const char DECIMAL_SEPARATOR = '.';
+		static bool IsName(char ch) => char.IsLetter(ch) || ch == '_';
+		static bool IsNumeric(char ch) => char.IsNumber(ch) || ch == DECIMAL_SEPARATOR;
+
 		// Algoritm
 		Queue<IToken> match = new(3);
 		StringBuilder buffer = new(5);
@@ -104,48 +104,52 @@ public partial class DiceExpression
 					symbol = Symbol.CloseBracket;
 					bracketCount--;
 				}
+				else if (ch == PARAMETER_SEPARATOR)
+				{
+					symbol = Symbol.FunctionSeparator;
+				}
 				else if (r < expLength) // hasRight
 				{
+					char chR = expression[r];
+
 					int l = i - 1;
 					bool hasLeft = l >= 0;
-					char chR = expression[r];
 					char chL = hasLeft ? expression[l] : '\0';
 
 					// #Unary-PreOperators
-					if ((IsNumeric(chR) || chR == OPEN_BRACKET) && (i == 0 || (hasLeft && !IsNumeric(chL) && chL != CLOSE_BRACKET)))
+					if ((i == 0 || (hasLeft && !(IsNumeric(chL) || chL == CLOSE_BRACKET))) && (IsNumeric(chR) || chR == OPEN_BRACKET))
 					{
 						if (ch == '+')
 							continue;
 						else if (ch == '-')
 							symbol = Symbol.Negate;
 						else
-							throw new Exception($"There is no Unary Pre Operator {ch}");
+							throw new Exception($"There is no Unary-PreOperator: '{ch}'");
 					}
 					// #Bi-Operators
-					else if (ch == '+')
-						symbol = Symbol.Addition;
-					else if (ch == '-')
-						symbol = Symbol.Subtraction;
-					else if (ch == '*')
-						symbol = Symbol.Multiplication;
-					else if (ch == '/')
-						symbol = Symbol.Division;
-					else if (ch == '%')
-						symbol = Symbol.Remainer;
-					else if (ch == '^')
-						symbol = Symbol.Pow;
-					else if (ch == 'd')
-						symbol = Symbol.Dice;
-					// #Bi-Operators with 2 letters
-					else if (ch == '&' && expression[r] == '&' && (i + 2) < expLength)
+					else if (hasLeft)
 					{
-						//i += 2;
-						throw new NotImplementedException($"{ch}{chR} is not implemented");
-					}
-					// #Unary-PosOperator
-					else if (hasLeft && IsNumeric(chL) && !IsNumeric(chR))
-					{
-						throw new NotImplementedException($"There is no Unary Pos BinaryOperator '{ch}'");
+						if (ch == '+')
+							symbol = Symbol.Addition;
+						else if (ch == '-')
+							symbol = Symbol.Subtraction;
+						else if (ch == '*')
+							symbol = Symbol.Multiplication;
+						else if (ch == '/')
+							symbol = Symbol.Division;
+						else if (ch == '%')
+							symbol = Symbol.Remainer;
+						else if (ch == '^')
+							symbol = Symbol.Pow;
+						else if (ch == 'd')
+							symbol = Symbol.Dice;
+						// #Unary-PosOperator
+						else if (IsNumeric(chL) && !(IsNumeric(chR) && ch == OPEN_BRACKET))
+						{
+							throw new NotImplementedException($"There is no Unary-PosOperator: '{ch}'");
+						}
+						else
+							throw new Exception($"There is no Binary-Operator: '{ch}'");
 					}
 					// #Funcs
 					else if (IsName(ch) && !IsNumeric(chL))
@@ -174,6 +178,7 @@ public partial class DiceExpression
 							"round" => Symbol.Round,
 							"abs" => Symbol.Abs,
 							"sqtr" => Symbol.Sqtr,
+							"mult" => Symbol.Mult,
 							_ => throw new Exception($"The funtion \"{funcStr}\" dont exist")
 						};
 
