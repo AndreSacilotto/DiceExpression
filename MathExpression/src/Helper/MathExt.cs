@@ -1,9 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Numerics;
-using DiceExpression.ShuntingYard;
+using MathExpression.ShuntingYard;
 
-namespace DiceExpression;
+namespace MathExpression.Util;
 
 public static class MathExt<T> where T : INumber<T>
 {

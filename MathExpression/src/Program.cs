@@ -5,35 +5,32 @@ global using System.Collections.Generic;
 global using System.Numerics;
 
 global using Number = System.Double;
-global using Integer = System.Int32;
 
 using System.Linq;
 
 using static System.Console;
 
-namespace DiceExpression;
+namespace MathExpression;
 
 internal class Program
 {
 	private static void Main()
 	{
-		var dices = new DiceExpression[]
+		var exp = new MathExpression[]
 		{
-			//new("1d4"),
-			//new("d6"),
-			//new("explode(d6)"),
 			//new("(11.25)"),
 			//new("(9 + 1) * 2"),
 			//new("(2.5 ^ 2.5)"),
 			//new("ceil(22.5)"),
-			//new("2d6"),
+			//new("ceil((3+.5))"),
 			//new("-20/-10"),
-			new("(5)!"),
+			//new("(5)!"),
+			new("clamp(100, 2., 35)"),
 		};
 
-		var width = dices.Max(x => x.ToString().Length);
+		var width = exp.Max(x => x.ToString().Length);
 
-		foreach (var item in dices)
+		foreach (var item in exp)
 		{
 			var equation = item.ToString().PadRight(width);
 			WriteLine($"{equation} = {item.Evaluate()}");

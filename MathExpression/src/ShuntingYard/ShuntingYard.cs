@@ -1,7 +1,6 @@
-﻿
-namespace DiceExpression.ShuntingYard;
+﻿namespace MathExpression.ShuntingYard;
 
-public static partial class DiceShuntingYard<T>
+public static partial class ShuntingYard<T>
 {
 	//https://en.wikipedia.org/wiki/Shunting_yard_algorithm -> explanation
 	//https://www.andr.mu/logs/the-shunting-yard-algorithm/ -> UnaryOperators
@@ -82,7 +81,7 @@ public static partial class DiceShuntingYard<T>
 		return queue.ToArray();
 	}
 
-	public static T EvaluatePostfixTokens(IToken[] postfixTokens)
+	public static T EvaluatePostfix(IToken[] postfixTokens)
 	{
 		var stack = new Stack<IToken>(3);
 
@@ -102,21 +101,38 @@ public static partial class DiceShuntingYard<T>
 				case Category.Function:
 				case Category.BinaryOperator:
 				{
-					IToken tk;
-					if (token is TokenUnary tu)
+					T PopNumber() => ((TokenNumber<T>)stack.Pop()).Number;
+
+					T value;
+					if (token is TokenUnary<T> tu)
 					{
-						tk = tu.UnaryFunction(stack.Pop());
+						var a = PopNumber();
+						value = tu.UnaryFunction(a);
 					}
-					else if (token is TokenBinary tb)
+					else if (token is TokenBinary<T> tb)
 					{
-						var b = stack.Pop();
-						var a = stack.Pop();
-						tk = tb.BinaryFunction(a, b);
+						var b = PopNumber();
+						var a = PopNumber();
+						value = tb.BinaryFunction(a, b);
+					}
+					else if (token is TokenTernary<T> tt)
+					{
+						var c = PopNumber();
+						var b = PopNumber();
+						var a = PopNumber();
+						value = tt.TernaryFunction(a, b, c);
+					}
+					else if (token is TokenNth<T> tth)
+					{
+						var arr = new T[tth.ParamsCount];
+						for (int j = 0; j < tth.ParamsCount; j++)
+							arr[j] = PopNumber();
+						value = tth.NthFunction(arr);
 					}
 					else
 						throw new Exception($"The {token} is not valid operator");
 
-					stack.Push(tk);
+					stack.Push(new TokenNumber<T>(value));
 					break;
 				}
 				case Category.Bracket:

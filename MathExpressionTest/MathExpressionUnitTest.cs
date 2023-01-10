@@ -1,6 +1,6 @@
-﻿namespace DiceExpressionTest;
+﻿namespace MathExpressionTest;
 
-public class DiceExpressionUnitTest
+public class ExpressionUnitTest
 {
 	public static IEnumerable<object[]> GetValues()
 	{
@@ -18,13 +18,14 @@ public class DiceExpressionUnitTest
 		yield return new object[] { "-30/-3", 10 };
 		yield return new object[] { "(-50)/-(-25)", -2 };
 		yield return new object[] { "10!", 3628800 };
+		yield return new object[] { "clamp(-100, 2., 35)", 2.0 };
 	}
 
 	[Theory]
 	[MemberData(nameof(GetValues))]
-	public void NoDiceExpression(string exp, double result) 
+	public void Expression(string exp, double result) 
 	{
-		var de = new DiceExpression.DiceExpression(exp);
+		var de = new MathExpression.MathExpression(exp);
 		var v = Math.Round(de.Evaluate(), 3, MidpointRounding.ToZero);
 		Assert.Equal(v, result);
 	}

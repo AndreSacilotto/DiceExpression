@@ -1,13 +1,12 @@
 ﻿
 using System.Globalization;
-using DiceExpression.ShuntingYard;
+using MathExpression.ShuntingYard;
 
-using Sy = DiceExpression.ShuntingYard.DiceShuntingYard<double>;
-using Rand = DiceExpression.IRandom<double, int>;
+using Sy = MathExpression.ShuntingYard.ShuntingYard<double>;
 
-namespace DiceExpression;
+namespace MathExpression;
 
-public partial class DiceExpression
+public partial class MathExpression
 {
 	private static readonly Regex whitespaceRegex = Whitespace();
 
@@ -19,17 +18,14 @@ public partial class DiceExpression
 
 	private string internalExpression;
 
-	public Rand Random { get; set; }
-
-	public DiceExpression(string expression, Rand? rand = null)
+	public MathExpression(string expression)
 	{
-		Random = rand ?? new GenericRandom<Number>();
 		internalExpression = CleanExpression(expression);
 		infix = TokenizeExpression(internalExpression).ToArray();
 		postfix = Sy.InfixToPostfix(infix);
 	}
 
-	public Number Evaluate() => Sy.EvaluatePostfixTokens(postfix);
+	public Number Evaluate() => Sy.EvaluatePostfix(postfix);
 
 	public override string ToString() => internalExpression;
 
@@ -65,7 +61,7 @@ public partial class DiceExpression
 			// #Number
 			if (char.IsNumber(ch) || ch == DECIMAL_SEPARATOR)
 			{
-				bool isFloat = false;
+				bool isFloat = ch == DECIMAL_SEPARATOR;
 				buffer.Append(ch);
 				//loop-ahead for more decimals
 				for (i++; i < expLength; i++)
@@ -86,16 +82,8 @@ public partial class DiceExpression
 				}
 
 				// Parse Number
-				if (isFloat)
-				{
-					var value = Number.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
-					match.Enqueue(new TokenNumber<Number>(value));
-				}
-				else
-				{
-					var value = Integer.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
-					match.Enqueue(new TokenNumber<Integer>(value));
-				}
+				var value = Number.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
+				match.Enqueue(new TokenNumber<Number>(value));
 				buffer.Clear();
 			}
 			// #Brackets
@@ -131,43 +119,34 @@ public partial class DiceExpression
 				{
 					if (ch == '+')
 						continue;
-					else if (ch == '-')
-						symbol = Symbol.Negate;
-					else if (ch == 'd')
-						symbol = Symbol.Dice;
-					else
-						throw new Exception($"There is no Unary-PreOperator: '{ch}'");
+					symbol = ch switch {
+						'-' => Symbol.Negate,
+						_ => throw new Exception($"There is no Unary-PreOperator: '{ch}'"),
+					};
 				}
 				// #Bi-Operators
 				else if (hasRight && hasLeft)
 				{
-					if (ch == '+')
-						symbol = Symbol.Addition;
-					else if (ch == '-')
-						symbol = Symbol.Subtraction;
-					else if (ch == '*')
-						symbol = Symbol.Multiplication;
-					else if (ch == '/')
-						symbol = Symbol.Division;
-					else if (ch == '%')
-						symbol = Symbol.Remainer;
-					else if (ch == '^')
-						symbol = Symbol.Pow;
-					else if (ch == 'd')
-						symbol = Symbol.DiceRoll;
-					else
-						throw new Exception($"There is no Binary-Operator: '{ch}'");
+					symbol = ch switch {
+						'+' => Symbol.Addition,
+						'-' => Symbol.Subtraction,
+						'*' => Symbol.Multiplication,
+						'/' => Symbol.Division,
+						'%' => Symbol.Remainer,
+						'^' => Symbol.Pow,
+						_ => throw new Exception($"There is no Binary-Operator: '{ch}'"),
+					};
 				}
 				// #Unary-PosOperator
 				else if (hasLeft && IsNumeric(chL) && (!hasRight || (hasRight && (!IsNumeric(chR) && chR != OPEN_BRACKET))))
 				{
-					if (ch == '!')
-						symbol = Symbol.Factorial;
-					else
-						throw new Exception($"There is no Unary-PreOperator: '{ch}'");
+					symbol = ch switch {
+						'!' => Symbol.Factorial,
+						_ => throw new Exception($"There is no Unary-PreOperator: '{ch}'"),
+					};
 				}
 				// #Funcs
-				else if (IsName(ch) && hasRight && hasLeft && !IsNumeric(chL))
+				else if (IsName(ch) && hasRight)
 				{
 					buffer.Append(ch);
 					//look-ahead for more text until find the bracket
@@ -194,10 +173,10 @@ public partial class DiceExpression
 						"abs" => Symbol.Abs,
 						"sqtr" => Symbol.Sqtr,
 
-						"explode" => Symbol.Explode,
-						"highest" => Symbol.KeepHighest,
-						"lowest" => Symbol.KeepLowest,
-						"rh" => Symbol.KeepLowestHighest,
+						"min" => Symbol.Min,
+						"max" => Symbol.Max,
+						"clamp" => Symbol.Clamp,
+
 						_ => throw new Exception($"The funtion \"{funcStr}\" dont exist")
 					};
 

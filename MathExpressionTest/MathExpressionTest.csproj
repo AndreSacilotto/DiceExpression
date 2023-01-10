@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DiceExpression\DiceExpression.csproj" />
+    <ProjectReference Include="..\MathExpression\MathExpression.csproj" />
   </ItemGroup>
 
 </Project>

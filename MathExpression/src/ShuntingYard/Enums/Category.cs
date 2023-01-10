@@ -1,4 +1,4 @@
-﻿namespace DiceExpression.ShuntingYard;
+﻿namespace MathExpression.ShuntingYard;
 
 public enum Category : byte
 {
