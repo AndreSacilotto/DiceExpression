@@ -5,6 +5,7 @@ public class RandomInt : IRandom<int, int>
 	private Random rng = null!;
 	private int seed;
 
+	public RandomInt() => rng = new();
 	public RandomInt(int seed) => Seed = seed;
 
 	public int Seed

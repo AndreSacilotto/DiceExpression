@@ -1,9 +1,9 @@
 ﻿
 using System.Globalization;
+using DiceExpression.ShuntingYard;
 
-using Number = System.Double;
-
-using static DiceExpression.DiceShuntingYard<double>;
+using Sy = DiceExpression.ShuntingYard.DiceShuntingYard<double>;
+using Rand = DiceExpression.IRandom<double, int>;
 
 namespace DiceExpression;
 
@@ -19,14 +19,17 @@ public partial class DiceExpression
 
 	private string internalExpression;
 
-	public DiceExpression(string expression)
+	public Rand Random { get; set; }
+
+	public DiceExpression(string expression, Rand? rand = null)
 	{
+		Random = rand ?? new GenericRandom<Number>();
 		internalExpression = CleanExpression(expression);
 		infix = TokenizeExpression(internalExpression).ToArray();
-		postfix = InfixToPostfix(infix);
+		postfix = Sy.InfixToPostfix(infix);
 	}
 
-	public double Evaluate() => EvaluatePostfixTokens(postfix);
+	public Number Evaluate() => Sy.EvaluatePostfixTokens(postfix);
 
 	public override string ToString() => internalExpression;
 
@@ -82,115 +85,128 @@ public partial class DiceExpression
 					buffer.Append(ch);
 				}
 
-				// Parse
-				var value = double.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
+				// Parse Number
+				if (isFloat)
+				{
+					var value = Number.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
+					match.Enqueue(new TokenNumber<Number>(value));
+				}
+				else
+				{
+					var value = Integer.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
+					match.Enqueue(new TokenNumber<Integer>(value));
+				}
 				buffer.Clear();
-
-				match.Enqueue(new TokenNumber(value));
+			}
+			// #Brackets
+			else if (ch == OPEN_BRACKET)
+			{
+				match.Enqueue(Sy.Symbols[Symbol.OpenBracket]);
+				bracketCount++;
+			}
+			else if (ch == CLOSE_BRACKET)
+			{
+				match.Enqueue(Sy.Symbols[Symbol.CloseBracket]);
+				bracketCount--;
+			}
+			else if (ch == PARAMETER_SEPARATOR)
+			{
+				match.Enqueue(Sy.Symbols[Symbol.ArgsSeparator]);
+				continue;
 			}
 			else
 			{
 				Symbol symbol;
+
 				int r = i + 1;
+				bool hasRight = r < expLength;
+				char chR = hasRight ? expression[r] : '\0';
 
-				// #Brackets
-				if (ch == OPEN_BRACKET)
+				int l = i - 1;
+				bool hasLeft = l >= 0;
+				char chL = hasLeft ? expression[l] : '\0';
+
+				// #Unary-PreOperators
+				if (hasRight && (i == 0 || (hasLeft && !(IsNumeric(chL) || chL == CLOSE_BRACKET))) && (IsNumeric(chR) || chR == OPEN_BRACKET))
 				{
-					symbol = Symbol.OpenBracket;
-					bracketCount++;
-				}
-				else if (ch == CLOSE_BRACKET)
-				{
-					symbol = Symbol.CloseBracket;
-					bracketCount--;
-				}
-				else if (ch == PARAMETER_SEPARATOR)
-				{
-					symbol = Symbol.FunctionSeparator;
-				}
-				else if (r < expLength) // hasRight
-				{
-					char chR = expression[r];
-
-					int l = i - 1;
-					bool hasLeft = l >= 0;
-					char chL = hasLeft ? expression[l] : '\0';
-
-					// #Unary-PreOperators
-					if ((i == 0 || (hasLeft && !(IsNumeric(chL) || chL == CLOSE_BRACKET))) && (IsNumeric(chR) || chR == OPEN_BRACKET))
-					{
-						if (ch == '+')
-							continue;
-						else if (ch == '-')
-							symbol = Symbol.Negate;
-						else
-							throw new Exception($"There is no Unary-PreOperator: '{ch}'");
-					}
-					// #Bi-Operators
-					else if (hasLeft)
-					{
-						if (ch == '+')
-							symbol = Symbol.Addition;
-						else if (ch == '-')
-							symbol = Symbol.Subtraction;
-						else if (ch == '*')
-							symbol = Symbol.Multiplication;
-						else if (ch == '/')
-							symbol = Symbol.Division;
-						else if (ch == '%')
-							symbol = Symbol.Remainer;
-						else if (ch == '^')
-							symbol = Symbol.Pow;
-						else if (ch == 'd')
-							symbol = Symbol.Dice;
-						// #Unary-PosOperator
-						else if (IsNumeric(chL) && !(IsNumeric(chR) && ch == OPEN_BRACKET))
-						{
-							throw new NotImplementedException($"There is no Unary-PosOperator: '{ch}'");
-						}
-						else
-							throw new Exception($"There is no Binary-Operator: '{ch}'");
-					}
-					// #Funcs
-					else if (IsName(ch) && !IsNumeric(chL))
-					{
-						buffer.Append(ch);
-						//look-ahead for more text until find the bracket
-						for (i++; i < expLength; i++)
-						{
-							ch = expression[i];
-							if (ch == OPEN_BRACKET)
-							{
-								i--;
-								break;
-							}
-							buffer.Append(ch);
-						}
-
-						if (ch != OPEN_BRACKET)
-							throw new Exception("Function has no open bracket");
-
-						// Try find Func
-						var funcStr = buffer.ToString();
-						symbol = funcStr switch {
-							"floor" => Symbol.Floor,
-							"ceil" => Symbol.Ceil,
-							"round" => Symbol.Round,
-							"abs" => Symbol.Abs,
-							"sqtr" => Symbol.Sqtr,
-							"mult" => Symbol.Mult,
-							_ => throw new Exception($"The funtion \"{funcStr}\" dont exist")
-						};
-
-						buffer.Clear();
-					}
+					if (ch == '+')
+						continue;
+					else if (ch == '-')
+						symbol = Symbol.Negate;
+					else if (ch == 'd')
+						symbol = Symbol.Dice;
 					else
-						throw new Exception($"Expression is too short");
+						throw new Exception($"There is no Unary-PreOperator: '{ch}'");
+				}
+				// #Bi-Operators
+				else if (hasRight && hasLeft)
+				{
+					if (ch == '+')
+						symbol = Symbol.Addition;
+					else if (ch == '-')
+						symbol = Symbol.Subtraction;
+					else if (ch == '*')
+						symbol = Symbol.Multiplication;
+					else if (ch == '/')
+						symbol = Symbol.Division;
+					else if (ch == '%')
+						symbol = Symbol.Remainer;
+					else if (ch == '^')
+						symbol = Symbol.Pow;
+					else if (ch == 'd')
+						symbol = Symbol.DiceRoll;
+					else
+						throw new Exception($"There is no Binary-Operator: '{ch}'");
+				}
+				// #Unary-PosOperator
+				else if (hasLeft && IsNumeric(chL) && (!hasRight || (hasRight && (!IsNumeric(chR) && chR != OPEN_BRACKET))))
+				{
+					if (ch == '!')
+						symbol = Symbol.Factorial;
+					else
+						throw new Exception($"There is no Unary-PreOperator: '{ch}'");
+				}
+				// #Funcs
+				else if (IsName(ch) && hasRight && hasLeft && !IsNumeric(chL))
+				{
+					buffer.Append(ch);
+					//look-ahead for more text until find the bracket
+					for (i++; i < expLength; i++)
+					{
+						ch = expression[i];
+						if (ch == OPEN_BRACKET)
+						{
+							i--;
+							break;
+						}
+						buffer.Append(ch);
+					}
+
+					if (ch != OPEN_BRACKET)
+						throw new Exception("Function has no open bracket");
+
+					// Try find Func
+					var funcStr = buffer.ToString();
+					symbol = funcStr switch {
+						"floor" => Symbol.Floor,
+						"ceil" => Symbol.Ceil,
+						"round" => Symbol.Round,
+						"abs" => Symbol.Abs,
+						"sqtr" => Symbol.Sqtr,
+
+						"explode" => Symbol.Explode,
+						"highest" => Symbol.KeepHighest,
+						"lowest" => Symbol.KeepLowest,
+						"rh" => Symbol.KeepLowestHighest,
+						_ => throw new Exception($"The funtion \"{funcStr}\" dont exist")
+					};
+
+					buffer.Clear();
 				}
 				else
 					throw new Exception($"Invalid character {ch}");
 
-				match.Enqueue(Symbols[symbol]);
+				match.Enqueue(Sy.Symbols[symbol]);
 			}
 
 		}

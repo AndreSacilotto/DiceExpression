@@ -5,6 +5,7 @@ public class RandomDouble : IRandom<double, int>
 	private Random rng = null!;
 	private int seed;
 
+	public RandomDouble() => rng = new();
 	public RandomDouble(int seed) => Seed = seed;
 
 	public int Seed

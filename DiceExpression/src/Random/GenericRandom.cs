@@ -5,6 +5,7 @@ public class GenericRandom<T> : IRandom<T, int> where T : unmanaged, INumber<T>
 	private Random rng = null!;
 	private int seed;
 
+	public GenericRandom() => rng = new();
 	public GenericRandom(int seed) => Seed = seed;
 
 	public int Seed
