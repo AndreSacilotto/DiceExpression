@@ -1,4 +1,4 @@
-﻿namespace MathExpression.ShuntingYard;
+﻿namespace MathNotation.ShuntingYard;
 
 public class TokenNumber<T> : IToken where T : unmanaged, INumber<T>
 {

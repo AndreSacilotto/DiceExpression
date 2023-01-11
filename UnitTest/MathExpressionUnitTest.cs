@@ -1,6 +1,6 @@
-﻿namespace MathExpressionTest;
+﻿namespace XTesting;
 
-public class ExpressionUnitTest
+public class MathExpressionUnitTest
 {
 	public static IEnumerable<object[]> GetValues()
 	{
@@ -25,7 +25,7 @@ public class ExpressionUnitTest
 	[MemberData(nameof(GetValues))]
 	public void Expression(string exp, double result) 
 	{
-		var de = new MathExpression.MathExpression(exp);
+		var de = new MathNotation.MathExpression<double>(exp);
 		var v = Math.Round(de.Evaluate(), 3, MidpointRounding.ToZero);
 		Assert.Equal(v, result);
 	}

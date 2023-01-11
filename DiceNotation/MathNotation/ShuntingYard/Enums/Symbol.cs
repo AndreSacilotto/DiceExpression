@@ -1,4 +1,4 @@
-﻿namespace MathExpression.ShuntingYard;
+﻿namespace MathNotation.ShuntingYard;
 
 public enum Symbol : byte
 {
@@ -9,7 +9,7 @@ public enum Symbol : byte
 	CloseBracket,
 	ArgsSeparator,
 
-	/* Binary Operators */
+	/* Binary operators */
 	Addition,
 	Subtraction,
 	Multiplication,
@@ -17,10 +17,10 @@ public enum Symbol : byte
 	Pow,
 	Remainer,
 
-	/* Unary Pre Operators */
+	/* Unary Pre operators */
 	Negate,
 
-	/* Unary Pos Operators */
+	/* Unary Pos operators */
 	Factorial,
 
 	/* Funcs */

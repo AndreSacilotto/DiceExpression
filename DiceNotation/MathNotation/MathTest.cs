@@ -1,7 +1,7 @@
 ﻿using static System.Console;
 
 
-namespace MathExpression;
+namespace MathNotation;
 
 public static class MathTest<IN, OUT> where OUT : INumber<OUT> where IN : INumber<IN>
 {

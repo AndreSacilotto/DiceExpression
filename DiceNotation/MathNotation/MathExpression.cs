@@ -1,18 +1,14 @@
 ﻿
 using System.Globalization;
-using MathExpression.ShuntingYard;
+using MathNotation.ShuntingYard;
+using Helper;
 
-using Sy = MathExpression.ShuntingYard.ShuntingYard<double>;
+using Sy = MathNotation.ShuntingYard.ShuntingYard<double>;
 
-namespace MathExpression;
+namespace MathNotation;
 
-public partial class MathExpression
+public class MathExpression<T> where T : unmanaged, INumber<T>
 {
-	private static readonly Regex whitespaceRegex = Whitespace();
-
-	[GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
-	private static partial Regex Whitespace();
-
 	private IToken[] infix;
 	private IToken[] postfix;
 
@@ -25,6 +21,13 @@ public partial class MathExpression
 		postfix = Sy.InfixToPostfix(infix);
 	}
 
+	public MathExpression(IToken[] infix)
+	{
+		this.infix = infix;
+		internalExpression = InfixToExpression(infix);
+		postfix = Sy.InfixToPostfix(infix);
+	}
+
 	public Number Evaluate() => Sy.EvaluatePostfix(postfix);
 
 	public override string ToString() => internalExpression;
@@ -34,8 +37,7 @@ public partial class MathExpression
 		if (string.IsNullOrWhiteSpace(expression))
 			throw new Exception("Empty Expression");
 
-		expression = whitespaceRegex.Replace(expression, string.Empty);
-		var sb = new StringBuilder(expression.ToLowerInvariant());
+		var sb = new StringBuilder(UtilString.CleanEquation(expression));
 		return sb.Replace("+-", "-").Replace("-+", "-").Replace("--", "+").Replace("++", "+").ToString();
 	}
 
@@ -114,36 +116,29 @@ public partial class MathExpression
 				bool hasLeft = l >= 0;
 				char chL = hasLeft ? expression[l] : '\0';
 
-				// #Unary-PreOperators
+				// #Unary-preOperators
 				if (hasRight && (i == 0 || (hasLeft && !(IsNumeric(chL) || chL == CLOSE_BRACKET))) && (IsNumeric(chR) || chR == OPEN_BRACKET))
 				{
-					if (ch == '+')
-						continue;
-					symbol = ch switch {
-						'-' => Symbol.Negate,
-						_ => throw new Exception($"There is no Unary-PreOperator: '{ch}'"),
-					};
+					var result = Array.Find(preOperators, x => x.Ch == ch);
+					if (result == null)
+						throw new Exception($"There is no Unary-PreOperator: '{ch}'");
+					symbol = result.Symbol;
 				}
-				// #Bi-Operators
+				// #Bi-operators
 				else if (hasRight && hasLeft)
 				{
-					symbol = ch switch {
-						'+' => Symbol.Addition,
-						'-' => Symbol.Subtraction,
-						'*' => Symbol.Multiplication,
-						'/' => Symbol.Division,
-						'%' => Symbol.Remainer,
-						'^' => Symbol.Pow,
-						_ => throw new Exception($"There is no Binary-Operator: '{ch}'"),
-					};
+					var result = Array.Find(operators, x => x.Ch == ch);
+					if (result == null)
+						throw new Exception($"There is no Binary-Operator: '{ch}'");
+					symbol = result.Symbol;
 				}
 				// #Unary-PosOperator
 				else if (hasLeft && IsNumeric(chL) && (!hasRight || (hasRight && (!IsNumeric(chR) && chR != OPEN_BRACKET))))
 				{
-					symbol = ch switch {
-						'!' => Symbol.Factorial,
-						_ => throw new Exception($"There is no Unary-PreOperator: '{ch}'"),
-					};
+					var result = Array.Find(posOperators, x => x.Ch == ch);
+					if (result == null)
+						throw new Exception($"There is no Unary-PreOperator: '{ch}'");
+					symbol = result.Symbol;
 				}
 				// #Funcs
 				else if (IsName(ch) && hasRight)
@@ -166,26 +161,20 @@ public partial class MathExpression
 
 					// Try find Func
 					var funcStr = buffer.ToString();
-					symbol = funcStr switch {
-						"floor" => Symbol.Floor,
-						"ceil" => Symbol.Ceil,
-						"round" => Symbol.Round,
-						"abs" => Symbol.Abs,
-						"sqtr" => Symbol.Sqtr,
 
-						"min" => Symbol.Min,
-						"max" => Symbol.Max,
-						"clamp" => Symbol.Clamp,
-
-						_ => throw new Exception($"The funtion \"{funcStr}\" dont exist")
-					};
+					var result = Array.Find(functions, x => x.Text == funcStr);
+					if (result == null)
+						throw new Exception($"The funtion \"{funcStr}\" dont exist");
+					
+					symbol = result.Symbol;
 
 					buffer.Clear();
 				}
 				else
 					throw new Exception($"Invalid character {ch}");
 
-				match.Enqueue(Sy.Symbols[symbol]);
+				if (symbol != Symbol.None)
+					match.Enqueue(Sy.Symbols[symbol]);
 			}
 
 		}
@@ -196,6 +185,69 @@ public partial class MathExpression
 		return match;
 	}
 
+	private static string InfixToExpression(IToken[] infix)
+	{
+		var sb = new StringBuilder(infix.Length);
+		foreach (var token in infix)
+		{
+			int len = sb.Length;
+			bool FindSymbolPredicate(ITokenSymbol ts) => ts.Symbol == token.Symbol;
+
+			var sc = Array.Find(preOperators, FindSymbolPredicate);
+			if (sc != null)
+				sb.Append(sc.Ch);
+
+			sc = Array.Find(operators, FindSymbolPredicate);
+			if (sc != null)
+				sb.Append(sc.Ch);
+
+			sc = Array.Find(posOperators, FindSymbolPredicate);
+			if (sc != null)
+				sb.Append(sc.Ch);
+
+			var ss = Array.Find(functions, FindSymbolPredicate);
+			if (ss != null)
+				sb.Append(ss.Text);
+
+			if(len == sb.Length)
+				throw new Exception($"There is no char {token.Symbol}");
+		}
+
+		return sb.ToString();
+	}
+
+	#region Operators and Funcs
+	private record class SymbolChar(char Ch, Symbol Symbol) : ITokenSymbol;
+	private record class SymbolString(string Text, Symbol Symbol) : ITokenSymbol;
+
+	//Dictonarys are not faster than arrays in small collections (<20)
+
+	private static SymbolChar[] posOperators = new[]{
+		new SymbolChar('!', Symbol.Factorial),
+	};
+	private static SymbolChar[] preOperators = new[] {
+		new SymbolChar('+', Symbol.None),
+		new SymbolChar('-', Symbol.Negate),
+	};
+	private static SymbolChar[] operators = new[] {
+		new SymbolChar('+', Symbol.Addition),
+		new SymbolChar('-', Symbol.Subtraction),
+		new SymbolChar('*', Symbol.Multiplication),
+		new SymbolChar('/', Symbol.Division),
+		new SymbolChar('%', Symbol.Remainer),
+		new SymbolChar('^', Symbol.Pow),
+	};
+	private static SymbolString[] functions = new[] {
+		new SymbolString("floor", Symbol.Floor),
+		new SymbolString("ceil", Symbol.Ceil),
+		new SymbolString("round", Symbol.Round),
+		new SymbolString("abs", Symbol.Abs),
+		new SymbolString("sqtr", Symbol.Sqtr),
+		new SymbolString("min", Symbol.Min),
+		new SymbolString("max", Symbol.Max),
+		new SymbolString("clamp", Symbol.Clamp),
+	};
+	#endregion
 
 
 }

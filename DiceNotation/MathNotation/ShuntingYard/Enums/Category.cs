@@ -1,4 +1,4 @@
-﻿namespace MathExpression.ShuntingYard;
+﻿namespace MathNotation.ShuntingYard;
 
 public enum Category : byte
 {

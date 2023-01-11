@@ -1,7 +1,8 @@
 ﻿
 using System.Collections.Immutable;
+using Helper;
 
-namespace MathExpression.ShuntingYard;
+namespace MathNotation.ShuntingYard;
 
 public partial class ShuntingYard<T> where T : unmanaged, INumber<T>, IPowerFunctions<T>, IRootFunctions<T>, IFloatingPoint<T>
 {
@@ -26,7 +27,7 @@ public partial class ShuntingYard<T> where T : unmanaged, INumber<T>, IPowerFunc
 
 			new TokenUnary<T>(Symbol.Negate, Category.UnaryPreOperator, (a) => -a),
 
-			new TokenUnary<T>(Symbol.Factorial, Category.UnaryPosOperator, Util.MathExt<T>.Factorial),
+			new TokenUnary<T>(Symbol.Factorial, Category.UnaryPosOperator, UtilMath<T>.Factorial),
 
 			new TokenBinaryOperator<T>(Symbol.Addition, (a, b) => a + b) { Precedence = 2 },
 			new TokenBinaryOperator<T>(Symbol.Subtraction, (a, b) => a - b) { Precedence = 2 },

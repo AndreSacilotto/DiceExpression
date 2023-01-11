@@ -1,11 +1,6 @@
-﻿using System;
-using System.ComponentModel;
-using System.Numerics;
-using MathExpression.ShuntingYard;
+﻿namespace Helper;
 
-namespace MathExpression.Util;
-
-public static class MathExt<T> where T : INumber<T>
+public static class UtilMath<T> where T : INumber<T>
 {
 	public static T Lerp(T from, T to, T weight) => from + (to - from) * weight;
 	public static T InverseLerp(T from, T to, T weight) => (weight - from) / (to - from);

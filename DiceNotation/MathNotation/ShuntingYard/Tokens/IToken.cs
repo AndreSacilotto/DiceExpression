@@ -1,9 +1,13 @@
-﻿namespace MathExpression.ShuntingYard;
+﻿namespace MathNotation.ShuntingYard;
 
-public interface IToken
+public interface ITokenSymbol
+{
+	Symbol Symbol { get; }
+}
+
+public interface IToken : ITokenSymbol
 {
     Category Category { get; }
-    Symbol Symbol { get; }
 }
 
 public interface ITokenPrecedence : IToken

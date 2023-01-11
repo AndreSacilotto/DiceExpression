@@ -1,4 +1,4 @@
-﻿namespace MathExpression.ShuntingYard;
+﻿namespace MathNotation.ShuntingYard;
 
 public class TokenUnary<T> : TokenBasic where T : unmanaged, INumber<T>
 {
@@ -9,20 +9,12 @@ public class TokenUnary<T> : TokenBasic where T : unmanaged, INumber<T>
 	public UnaryFunc UnaryFunction { get; }
 }
 
-
 public class TokenBinary<T> : TokenBasic where T : unmanaged, INumber<T>
 {
     public delegate T BinaryFunc(T a, T b);
 
     public TokenBinary(Symbol symbol, Category category, BinaryFunc function) : base(symbol, category) => BinaryFunction = function;
     public BinaryFunc BinaryFunction { get; }
-}
-
-public class TokenBinaryOperator<T> : TokenBinary<T>, ITokenPrecedence where T : unmanaged, INumber<T>
-{
-	public TokenBinaryOperator(Symbol symbol, BinaryFunc function) : base(symbol, Category.BinaryOperator, function) { }
-	public int Precedence { get; init; } = 0;
-	public bool RightAssociativity { get; init; } = false;
 }
 
 public class TokenTernary<T> : TokenBasic where T : unmanaged, INumber<T>

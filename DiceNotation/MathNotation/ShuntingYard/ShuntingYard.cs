@@ -1,4 +1,4 @@
-﻿namespace MathExpression.ShuntingYard;
+﻿namespace MathNotation.ShuntingYard;
 
 public static partial class ShuntingYard<T>
 {
