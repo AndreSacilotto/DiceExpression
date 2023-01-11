@@ -12,7 +12,7 @@ public partial class UtilString
 
 	public static string CleanEquation(string equation) 
 	{
-		return WhitespaceRegex.Replace(equation, string.Empty).ToLowerInvariant();
+		return WhitespaceRegex.Replace(equation, string.Empty).ToLower();
 	}
 
 }

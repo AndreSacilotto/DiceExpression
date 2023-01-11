@@ -60,7 +60,7 @@ public static partial class ShuntingYard<T>
 						if (stack.TryPeek(out var peek) && peek.Category == Category.Function)
 							queue.Enqueue(stack.Pop());
 					}
-					else if (token.Symbol == Symbol.ArgsSeparator)
+					else if (token.Symbol == Symbol.ParamsSeparator)
 					{
 						while (stack.Peek().Symbol != Symbol.OpenBracket)
 							queue.Enqueue(stack.Pop());

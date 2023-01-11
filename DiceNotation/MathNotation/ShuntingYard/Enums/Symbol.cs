@@ -7,7 +7,7 @@ public enum Symbol : byte
 	/* Brackets */
 	OpenBracket,
 	CloseBracket,
-	ArgsSeparator,
+	ParamsSeparator,
 
 	/* Binary operators */
 	Addition,
