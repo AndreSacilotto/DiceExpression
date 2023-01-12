@@ -12,7 +12,7 @@ public readonly struct Dice<T> where T : unmanaged, INumber<T>
 
 	public T Roll(IRandomNumber<T> rng) => rng.Next(T.One, sides);
 
-	public T RollExplosive(IRandomNumber<T> rng) 
+	public T RollExplosive(IRandomNumber<T> rng)
 	{
 		if (sides <= T.One)
 			throw new Exception("Infinity explosion");

@@ -1,6 +1,5 @@
 ﻿
 using System.Collections.Immutable;
-using System.Linq;
 using Helper;
 
 namespace MathNotation.ShuntingYard;
@@ -9,6 +8,17 @@ public partial class ShuntingYard<T> where T : unmanaged, INumber<T>, IPowerFunc
 {
 	public static ImmutableDictionary<char, IToken> SymbolsChar { get; }
 	public static ImmutableDictionary<string, IToken> SymbolsString { get; }
+
+	public static IToken? FindSymbol(Symbol symbol)
+	{
+		foreach (var item in ShuntingYard<T>.SymbolsString)
+			if (item.Value.Symbol == symbol)
+				return item.Value;
+		foreach (var item in ShuntingYard<T>.SymbolsString)
+			if (item.Value.Symbol == symbol)
+				return item.Value;
+		return default;
+	}
 
 	static ShuntingYard()
 	{
@@ -39,9 +49,9 @@ public partial class ShuntingYard<T> where T : unmanaged, INumber<T>, IPowerFunc
 			["max"] = new TokenBinary<T>(Symbol.Max, Category.Function, T.Max),
 			["clamp"] = new TokenTernary<T>(Symbol.Clamp, Category.Function, T.Clamp),
 		};
-		//aliases
+		//Aliases
 		s.Add("cap", s["clamp"]);
-
+		//ToImmutable
 		SymbolsChar = c.ToImmutableDictionary();
 		SymbolsString = s.ToImmutableDictionary();
 	}

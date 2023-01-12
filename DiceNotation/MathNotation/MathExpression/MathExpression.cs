@@ -1,36 +1,85 @@
 ﻿
 using System.Globalization;
-using MathNotation.ShuntingYard;
+using System.Linq.Expressions;
 using Helper;
+using MathNotation.ShuntingYard;
 
 namespace MathNotation;
 
 public class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFunctions<T>, IRootFunctions<T>, IFloatingPoint<T>
 {
-	private IToken[] infix;
-	private IToken[] postfix;
+	private readonly Queue<IToken> infix;
+	private readonly Queue<IToken> postfix;
 
-	private string internalExpression;
+	private readonly StringBuilder expressionBuilder;
 
-	public IToken[] Infix => infix;
-	public IToken[] Postfix => postfix;
-	public string Expression => internalExpression;
+	private bool dirty;
 
+	#region Props
+	public IReadOnlyCollection<IToken> Infix => infix;
+	public IReadOnlyCollection<IToken> Postfix
+	{
+		get {
+			EvaluateInfix();
+			return postfix;
+		}
+	}
+	public string Expression
+	{
+		get {
+			EvaluateInfix();
+			return expressionBuilder.ToString();
+		}
+	}
+	#endregion
+
+	#region Ctors
+	private MathExpression(Queue<IToken> infixTokens)
+	{
+		infix = infixTokens;
+
+		expressionBuilder = new(infix.Count);
+		postfix = new Queue<IToken>(infixTokens.Count / 2);
+
+		dirty = true;
+	}
 	public MathExpression(string expression)
 	{
-		internalExpression = CleanExpression(expression);
-		infix = TokenizeExpression(internalExpression).ToArray();
-		postfix = ShuntingYard<T>.InfixToPostfix(infix);
-	}
+		expression = CleanExpression(expression);
+		infix = new Queue<IToken>(expression.Length);
+		TokenizeExpression(infix, expression);
 
-	public MathExpression(IToken[] infix)
+		expressionBuilder = new(infix.Count);
+		postfix = new Queue<IToken>(infix.Count / 2);
+
+		dirty = true;
+	}
+	public MathExpression(IEnumerable<IToken> infixTokens) : this(new Queue<IToken>(infixTokens)) { }
+	#endregion
+
+	private void EvaluateInfix()
 	{
-		this.infix = infix;
-		internalExpression = InfixToExpression(infix);
-		postfix = ShuntingYard<T>.InfixToPostfix(infix);
+		if (!dirty)
+			return;
+
+		expressionBuilder.Clear();
+		InfixToExpression(expressionBuilder, infix);
+		expressionBuilder.TrimExcess();
+
+		postfix.Clear();
+		ShuntingYard<T>.InfixToPostfix(postfix, infix);
+		postfix.TrimExcess();
+
+		dirty = false;
 	}
 
-	public T Evaluate() => ShuntingYard<T>.EvaluatePostfix(postfix);
+	public T Evaluate()
+	{
+		EvaluateInfix();
+		return ShuntingYard<T>.EvaluatePostfix(postfix);
+	}
+
+	#region Static
 
 	private static string CleanExpression(string expression)
 	{
@@ -48,16 +97,15 @@ public class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFunctions<
 	private const char CLOSE_BRACKET = ')';
 	private const char PARAMETER_SEPARATOR = ',';
 
-	public static Queue<IToken> TokenizeExpression(string expression)
+	public static void TokenizeExpression(Queue<IToken> infix, string expression)
 	{
 		static bool IsName(char ch) => char.IsLetter(ch) || ch == NAME_SEPARATOR;
-		static bool IsNumeric(char ch) => char.IsNumber(ch) || ch == DECIMAL_SEPARATOR;
+		static bool IsNumeric(char ch) => char.IsDigit(ch) || ch == DECIMAL_SEPARATOR;
 
 		// Algoritm
-		Queue<IToken> match = new(3);
-		StringBuilder buffer = new(5);
-		int bracketCount = 0;
+		var buffer = new StringBuilder(5);
 
+		int bracketCount = 0;
 		var expLength = expression.Length;
 		for (int i = 0; i < expLength; i++)
 		{
@@ -66,7 +114,7 @@ public class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFunctions<
 			IToken tk;
 
 			// #Number
-			if (char.IsNumber(ch) || ch == DECIMAL_SEPARATOR)
+			if (char.IsDigit(ch) || ch == DECIMAL_SEPARATOR)
 			{
 				bool isFloat = ch == DECIMAL_SEPARATOR;
 				buffer.Append(ch);
@@ -80,7 +128,7 @@ public class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFunctions<
 							throw new Exception("Invalid number format, too many decimal separators");
 						isFloat = true;
 					}
-					else if (!char.IsNumber(ch))
+					else if (!char.IsDigit(ch))
 					{
 						i--;
 						break;
@@ -160,19 +208,16 @@ public class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFunctions<
 					throw new Exception($"Invalid character {ch}");
 			}
 
-			match.Enqueue(tk);
+			infix.Enqueue(tk);
 		}
 
 		if (bracketCount != 0)
 			throw new Exception("Not all brackets have been closed");
-
-		return match;
 	}
 
-	public static string InfixToExpression(IToken[] infix)
+	public static void InfixToExpression(StringBuilder sb, IEnumerable<IToken> infix)
 	{
-		var sb = new StringBuilder(infix.Length);
-		foreach (IToken token in infix)
+		foreach (var token in infix)
 		{
 			var len = sb.Length;
 			if (token is TokenNumber<T> tn)
@@ -198,7 +243,42 @@ public class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFunctions<
 				throw new Exception($"There is no char {token.Symbol}");
 		}
 
-		return sb.ToString();
+		sb.TrimExcess();
 	}
+
+	#endregion
+
+	#region Modify Expression
+
+	public void AddExpression(string expression)
+	{
+		expression = CleanExpression(expression);
+
+		var infixTokens = new Queue<IToken>();
+		if (expression[0] == '-' || expression[0] == '+' || expression[0] == '~')
+			infixTokens.Enqueue(ShuntingYard<T>.SymbolsChar['+']);
+
+		TokenizeExpression(infixTokens, expression);
+
+		while (infixTokens.TryDequeue(out var peek))
+			infix.Enqueue(peek);
+
+		dirty = true;
+	}
+
+	public void AddNumber(T number)
+	{
+		infix.Enqueue(new TokenNumber<T>(number));
+		dirty = true;
+	}
+	public void AddSymbol(Symbol symbol)
+	{
+		var tk = ShuntingYard<T>.FindSymbol(symbol);
+		if (tk != null)
+			infix.Enqueue(tk);
+		dirty = true;
+	}
+
+	#endregion
 
 }

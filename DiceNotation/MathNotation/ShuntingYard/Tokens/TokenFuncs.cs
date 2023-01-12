@@ -11,10 +11,10 @@ public class TokenUnary<T> : TokenBasic where T : unmanaged, INumber<T>
 
 public class TokenBinary<T> : TokenBasic where T : unmanaged, INumber<T>
 {
-    public delegate T BinaryFunc(T a, T b);
+	public delegate T BinaryFunc(T a, T b);
 
-    public TokenBinary(Symbol symbol, Category category, BinaryFunc function) : base(symbol, category) => BinaryFunction = function;
-    public BinaryFunc BinaryFunction { get; }
+	public TokenBinary(Symbol symbol, Category category, BinaryFunc function) : base(symbol, category) => BinaryFunction = function;
+	public BinaryFunc BinaryFunction { get; }
 }
 
 public class TokenTernary<T> : TokenBasic where T : unmanaged, INumber<T>

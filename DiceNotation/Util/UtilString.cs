@@ -1,6 +1,4 @@
-﻿using System.Linq.Expressions;
-
-namespace Helper;
+﻿namespace Helper;
 
 public partial class UtilString
 {
@@ -10,7 +8,7 @@ public partial class UtilString
 	public static Regex WhitespaceRegex { get; } = Whitespace();
 
 
-	public static string CleanEquation(string equation) 
+	public static string CleanEquation(string equation)
 	{
 		return WhitespaceRegex.Replace(equation, string.Empty).ToLower();
 	}

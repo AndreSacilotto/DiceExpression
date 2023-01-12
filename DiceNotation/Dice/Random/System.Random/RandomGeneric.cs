@@ -18,57 +18,94 @@ public class RandomGeneric<T> : IRandom<T, int> where T : unmanaged, INumber<T>
 
 	public T Next()
 	{
-		var type = typeof(T);
-
-		if (type == typeof(int))
-			return T.CreateChecked(rng.Next());
-
-		if (type == typeof(long))
-			return T.CreateChecked(rng.NextInt64());
-
-		if (type == typeof(float))
-			return T.CreateChecked(rng.NextSingle() * float.CreateTruncating(float.MaxValue-1f));
-
-		if (type == typeof(double))
-			return T.CreateChecked(rng.NextDouble() * double.CreateTruncating(double.MaxValue-1d));
-
+		switch (Type.GetTypeCode(typeof(T)))
+		{
+			case TypeCode.SByte:
+			case TypeCode.Byte:
+			case TypeCode.Int16:
+			case TypeCode.UInt16:
+			case TypeCode.Int32:
+			case TypeCode.UInt32:
+			{
+				return T.CreateChecked(rng.Next());
+			}
+			case TypeCode.Int64:
+			case TypeCode.UInt64:
+			{
+				return T.CreateChecked(rng.NextInt64());
+			}
+			case TypeCode.Single:
+			{
+				return T.CreateChecked(rng.NextSingle() * float.CreateTruncating(float.MaxValue - 1f));
+			}
+			case TypeCode.Double:
+			case TypeCode.Decimal:
+			{
+				return T.CreateChecked(rng.NextDouble() * double.CreateTruncating(double.MaxValue - 1d));
+			}
+		}
 		throw new NotSupportedException(ErrorMsg());
 	}
 
 	public T Next(T max)
 	{
-		var type = typeof(T);
-
-		if (type == typeof(int))
-			return T.CreateChecked(rng.Next(int.CreateSaturating(max) + 1));
-
-		if (type == typeof(long))
-			return T.CreateChecked(rng.NextInt64(long.CreateSaturating(max) + 1L));
-
-		if (type == typeof(float))
-			return T.CreateChecked(rng.NextSingle() * float.CreateSaturating(max));
-
-		if (type == typeof(double))
-			return T.CreateChecked(rng.NextDouble() * double.CreateSaturating(max));
-
+		switch (Type.GetTypeCode(typeof(T)))
+		{
+			case TypeCode.SByte:
+			case TypeCode.Byte:
+			case TypeCode.Int16:
+			case TypeCode.UInt16:
+			case TypeCode.Int32:
+			case TypeCode.UInt32:
+			{
+				return T.CreateChecked(rng.Next(int.CreateSaturating(max) + 1));
+			}
+			case TypeCode.Int64:
+			case TypeCode.UInt64:
+			{
+				return T.CreateChecked(rng.NextInt64(long.CreateSaturating(max) + 1L));
+			}
+			case TypeCode.Single:
+			{
+				return T.CreateChecked(rng.NextSingle() * float.CreateSaturating(max));
+			}
+			case TypeCode.Double:
+			case TypeCode.Decimal:
+			{
+				return T.CreateChecked(rng.NextDouble() * double.CreateSaturating(max));
+			}
+		}
 		throw new NotSupportedException(ErrorMsg());
 	}
 
 	public T Next(T min, T max)
 	{
-		var type = typeof(T);
-
-		if (type == typeof(int))
-			return T.CreateChecked(rng.Next(int.CreateSaturating(min), int.CreateSaturating(max) + 1));
-
-		if (type == typeof(long))
-			return T.CreateChecked(rng.NextInt64(long.CreateSaturating(min), long.CreateSaturating(max) + 1L));
-
-		if (type == typeof(float))
-			return T.CreateChecked(rng.NextSingle() * float.CreateSaturating(max) + float.CreateSaturating(min));
-
-		if (type == typeof(double))
-			return T.CreateChecked(rng.NextDouble() * double.CreateSaturating(max) + double.CreateSaturating(min));
+		switch (Type.GetTypeCode(typeof(T)))
+		{
+			case TypeCode.SByte:
+			case TypeCode.Byte:
+			case TypeCode.Int16:
+			case TypeCode.UInt16:
+			case TypeCode.Int32:
+			case TypeCode.UInt32:
+			{
+				return T.CreateChecked(rng.Next(int.CreateSaturating(min), int.CreateSaturating(max) + 1));
+			}
+			case TypeCode.Int64:
+			case TypeCode.UInt64:
+			{
+				return T.CreateChecked(rng.NextInt64(long.CreateSaturating(min), long.CreateSaturating(max) + 1L));
+			}
+			case TypeCode.Single:
+			{
+				return T.CreateChecked(rng.NextSingle() * float.CreateSaturating(max) + float.CreateSaturating(min));
+			}
+			case TypeCode.Double:
+			case TypeCode.Decimal:
+			{
+				return T.CreateChecked(rng.NextDouble() * double.CreateSaturating(max) + double.CreateSaturating(min));
+			}
+		}
 
 		throw new NotSupportedException(ErrorMsg());
 	}

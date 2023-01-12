@@ -34,7 +34,7 @@ public static class MathTest<IN, OUT> where OUT : INumber<OUT> where IN : INumbe
 	public static OUT GetT(IN value) => OUT.CreateTruncating(value);
 	public static OUT GetS(IN value) => OUT.CreateSaturating(value);
 
-	public static void Test() 
+	public static void Test()
 	{
 		var i = (IN)typeof(IN).GetField("MaxValue")?.GetRawConstantValue()!;
 		WriteLine(GetO(i));

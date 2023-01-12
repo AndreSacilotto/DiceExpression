@@ -1,7 +1,4 @@
-﻿
-using System.Globalization;
-using MathNotation.ShuntingYard;
-using Helper;
+﻿using Helper;
 
 namespace DiceNotation;
 
@@ -10,21 +7,22 @@ public partial class DiceExpression<T> where T : unmanaged, INumber<T>, IBinaryI
 {
 	public record class DiceRollResult(T[] Rolls, T Result);
 
+	private IRandomNumber<T> rng;
+
 	//private IToken[] infix;
 	//private IToken[] postfix;
 
-	private string internalExpression;
+	private string internalExpressions;
 
-	public string Expression => internalExpression;
+	public string Expressions => internalExpressions;
 
-	public DiceExpression(string expression, IRandomNumber<T> random)
+	public DiceExpression(IRandomNumber<T> random, string expression)
 	{
-		internalExpression = CleanExpression(expression);
+		rng = random;
+		internalExpressions = CleanExpression(expression);
 	}
 
 	//	public Number Evaluate() => Sy.EvaluatePostfix(postfix);
-
-	//	public override string ToString() => internalExpression;
 
 	private static string CleanExpression(string expression)
 	{
@@ -36,6 +34,7 @@ public partial class DiceExpression<T> where T : unmanaged, INumber<T>, IBinaryI
 
 	public static void EvaluateDicesFromExpression(string expression)
 	{
+
 	}
 
 }

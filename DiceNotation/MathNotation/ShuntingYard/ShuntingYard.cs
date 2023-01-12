@@ -5,15 +5,12 @@ public static partial class ShuntingYard<T>
 	//https://en.wikipedia.org/wiki/Shunting_yard_algorithm -> explanation
 	//https://www.andr.mu/logs/the-shunting-yard-algorithm/ -> UnaryOperators
 	//https://stackoverflow.com/a/16392115 -> composite funcs
-	public static IToken[] InfixToPostfix(IToken[] infixTokens)
+	public static void InfixToPostfix(Queue<IToken> queue, IEnumerable<IToken> infixTokens)
 	{
 		Stack<IToken> stack = new(3);
-		Queue<IToken> queue = new(infixTokens.Length / 2);
 
-		for (int i = 0; i < infixTokens.Length; i++)
+		foreach (var token in infixTokens)
 		{
-			var token = infixTokens[i];
-
 			switch (token.Category)
 			{
 				case Category.Number:
@@ -75,20 +72,16 @@ public static partial class ShuntingYard<T>
 			}
 		}
 
-		while (stack.Count > 0)
-			queue.Enqueue(stack.Pop());
-
-		return queue.ToArray();
+		while (stack.TryPop(out var peek))
+			queue.Enqueue(peek);
 	}
 
-	public static T EvaluatePostfix(IToken[] postfixTokens)
+	public static T EvaluatePostfix(IEnumerable<IToken> postfixTokens)
 	{
 		var stack = new Stack<IToken>(3);
 
-		for (int i = 0; i < postfixTokens.Length; i++)
+		foreach (var token in postfixTokens)
 		{
-			var token = postfixTokens[i];
-
 			switch (token.Category)
 			{
 				case Category.Number:
@@ -130,7 +123,7 @@ public static partial class ShuntingYard<T>
 						value = tth.NthFunction(arr);
 					}
 					else
-						throw new Exception($"The {token} is not valid operator");
+						throw new Exception($"The {token} is not a valid operator");
 
 					stack.Push(new TokenNumber<T>(value));
 					break;
@@ -147,7 +140,7 @@ public static partial class ShuntingYard<T>
 			throw new Exception("Too many tokens on stack, invalid formula");
 		var result = stack.Pop();
 		if (result is not TokenNumber<T> tn)
-			throw new Exception("Result token is not t number");
+			throw new Exception("Result token is not a number");
 		return tn.Number;
 	}
 

@@ -7,7 +7,7 @@ public interface ITokenSymbol
 
 public interface IToken : ITokenSymbol
 {
-    Category Category { get; }
+	Category Category { get; }
 }
 
 public interface ITokenPrecedence : IToken
