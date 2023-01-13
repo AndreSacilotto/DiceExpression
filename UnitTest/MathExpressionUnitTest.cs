@@ -23,7 +23,7 @@ public class MathExpressionUnitTest
 
 	[Theory]
 	[MemberData(nameof(GetValues))]
-	public void Expression(string exp, double result) 
+	public void Expression(string exp, double result)
 	{
 		var de = new MathNotation.MathExpression<double>(exp);
 		var v = Math.Round(de.Evaluate(), 3, MidpointRounding.ToZero);
