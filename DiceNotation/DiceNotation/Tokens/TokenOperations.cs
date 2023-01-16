@@ -1,4 +1,4 @@
-﻿namespace MathNotation;
+﻿namespace DiceNotation;
 
 public class TokenNullary<T> : TokenBasic, ITokenNAry where T : unmanaged, INumber<T>
 {

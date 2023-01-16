@@ -79,18 +79,98 @@ public partial class MathExpression<T>
 		return output;
 	}
 
-	public static Queue<IToken> PostfixToInfix(IEnumerable<IToken> postfix)
+	public static Stack<IToken> PostfixToInfix(IEnumerable<IToken> postfix)
 	{
 		Stack<IToken> stack = new(3);
-		Queue<IToken> infix = new();
 
+		var open = CharOperations[OPEN_BRACKET];
+		var close = CharOperations[CLOSE_BRACKET];
+		var argSpt = CharOperations[PARAMETER_SEPARATOR];
 
-		foreach (var item in postfix)
+		foreach (var token in postfix)
 		{
+			if (token is TokenNumber<T>)
+			{
+				stack.Push(token);
+			}
+			else if (token is ITokenNAry)
+			{
+				stack.Push(open);
+
+				if (token is TokenUnary<T> tu)
+				{
+					var a = stack.Pop();
+
+					switch (token.Category)
+					{
+						case Category.PreOperator:
+						stack.Push(token);
+						stack.Push(a);
+						break;
+						case Category.Function:
+						stack.Push(token);
+						stack.Push(open);
+						stack.Push(a);
+						stack.Push(close);
+						break;
+						case Category.PostOperator:
+						stack.Push(a);
+						stack.Push(token);
+						break;
+						default:
+						throw new Exception($"Invalid Token Category {token.Category}");
+					}
+				}
+				else if (token is TokenBinary<T> tb)
+				{
+					var b = stack.Pop();
+					var a = stack.Pop();
+
+					switch (token.Category)
+					{
+						case Category.Function:
+						stack.Push(token);
+						stack.Push(open);
+						stack.Push(a);
+						stack.Push(argSpt);
+						stack.Push(b);
+						stack.Push(close);
+						break;
+						case Category.Operator:
+						stack.Push(a);
+						stack.Push(token);
+						stack.Push(b);
+						break;
+						default:
+						throw new Exception($"Invalid Token Category {token.Category}");
+					}
+
+				}
+				//Onward it can only be funtion
+				else if (token is TokenTernary<T> tt)
+				{
+					var c = stack.Pop();
+					var b = stack.Pop();
+					var a = stack.Pop();
+
+					stack.Push(token);
+					stack.Push(open);
+					stack.Push(a);
+					stack.Push(argSpt);
+					stack.Push(b);
+					stack.Push(argSpt);
+					stack.Push(c);
+					stack.Push(close);
+				}
+				else
+					throw new Exception($"The {token} is not a valid operation");
+
+				stack.Push(close);
+			}
 
 		}
 
-		return infix;
+		return stack;
 	}
 
 	public static T PosfixEvaluation(IEnumerable<IToken> postfix)
@@ -101,7 +181,7 @@ public partial class MathExpression<T>
 		{
 			if (token is TokenNumber<T> tn)
 				stack.Push(tn);
-			else if (token is ITokenOperator)
+			else if (token is ITokenNAry)
 			{
 				T PopNumber() => stack.Pop().Number;
 
@@ -123,13 +203,6 @@ public partial class MathExpression<T>
 					var b = PopNumber();
 					var a = PopNumber();
 					value = tt.TernaryFunction(a, b, c);
-				}
-				else if (token is TokenNth<T> tth)
-				{
-					var arr = new T[tth.ParamsCount];
-					for (int j = tth.ParamsCount - 1; j >= 0; j--)
-						arr[j] = PopNumber();
-					value = tth.NthFunction(arr);
 				}
 				else
 					throw new Exception($"The {token} is not a valid operation");

@@ -1,4 +1,4 @@
-﻿namespace DiceNotation;
+﻿namespace Helper;
 
 public class RandomInt : IRandom<int, int>
 {

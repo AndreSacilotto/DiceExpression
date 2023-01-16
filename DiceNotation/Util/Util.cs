@@ -6,6 +6,30 @@ public static class Util
 {
 	public static void TrimExcess(this StringBuilder sb) => sb.Capacity = sb.Length;
 
+	public static void AddRange<T>(this Queue<T> queue, IEnumerable<T> enumerable)
+	{
+		foreach (T obj in enumerable)
+			queue.Enqueue(obj);
+	}
+	public static void AddRange<T>(this Queue<T> queue, IEnumerable<T> enumerable, int lenght)
+	{
+		queue.EnsureCapacity(queue.Count + lenght);
+		foreach (T obj in enumerable)
+			queue.Enqueue(obj);
+	}
+
+	public static void AddRange<T>(this Stack<T> stack, IEnumerable<T> enumerable)
+	{
+		foreach (T obj in enumerable)
+			stack.Push(obj);
+	}
+	public static void AddRange<T>(this Stack<T> stack, IEnumerable<T> enumerable, int lenght)
+	{
+		stack.EnsureCapacity(stack.Count + lenght);
+		foreach (T obj in enumerable)
+			stack.Push(obj);
+	}
+
 	public static T[] Combine<T>(T[] first, T[] second) where T : unmanaged
 	{
 		var size = Marshal.SizeOf<T>();

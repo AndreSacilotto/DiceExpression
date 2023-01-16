@@ -1,4 +1,4 @@
-﻿namespace MathNotation;
+﻿namespace DiceNotation;
 
 public interface IToken
 {

@@ -1,15 +1,8 @@
-﻿global using System;
-global using System.Collections.Generic;
-global using System.Collections.Immutable;
-global using System.Numerics;
-global using System.Text;
-global using System.Text.RegularExpressions;
-global using Number = System.Double;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Linq;
+
 using DiceNotation;
 using MathNotation;
-using static System.Console;
 
 namespace Main;
 
@@ -27,11 +20,13 @@ internal class Program
 		//	new(rng, "1d6"),
 		//};
 
+		var parser = DiceReader<int>.ParseDice("2d20{H3}+2D6+d6{L<2}");
+
 		var exp = new MathExpression<double>[]
 		{
 			new MathExpression<double>("5+5"),
-			//new MathExpression<double>("-(10 / 2.5)"),
-			//new MathExpression<double>("20 + (-10 / 2.5)"),
+			new MathExpression<double>("-(10 / 2.5)"),
+			new MathExpression<double>("20 + (-10 / 2.5)"),
 		};
 
 		//exp[0].AddNumber(10.0);
@@ -42,7 +37,7 @@ internal class Program
 		foreach (var item in exp)
 		{
 			var equation = item.Expression.PadRight(width);
-			WriteLine($"{equation} = {item.Evaluate()}");
+			Console.WriteLine($"{equation} = {item.Evaluate()}");
 		}
 	}
 }

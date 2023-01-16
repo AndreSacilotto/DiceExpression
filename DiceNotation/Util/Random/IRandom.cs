@@ -1,4 +1,4 @@
-﻿namespace DiceNotation;
+﻿namespace Helper;
 
 public interface ISeed<T> where T : struct
 {

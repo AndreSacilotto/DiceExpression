@@ -1,7 +1,4 @@
-﻿using static System.Console;
-
-
-namespace MathNotation;
+﻿namespace MathNotation;
 
 public static class MathTest<IN, OUT> where OUT : INumber<OUT> where IN : INumber<IN>
 {
@@ -13,7 +10,7 @@ public static class MathTest<IN, OUT> where OUT : INumber<OUT> where IN : INumbe
 		}
 		catch
 		{
-			Write("CastException - ");
+			Console.Write("CastException - ");
 		}
 		return OUT.Zero;
 	}
@@ -26,7 +23,7 @@ public static class MathTest<IN, OUT> where OUT : INumber<OUT> where IN : INumbe
 		}
 		catch (ArithmeticException)
 		{
-			Write("ArithmeticException - ");
+			Console.Write("ArithmeticException - ");
 		}
 		return OUT.Zero;
 	}
@@ -37,10 +34,10 @@ public static class MathTest<IN, OUT> where OUT : INumber<OUT> where IN : INumbe
 	public static void Test()
 	{
 		var i = (IN)typeof(IN).GetField("MaxValue")?.GetRawConstantValue()!;
-		WriteLine(GetO(i));
-		WriteLine(GetC(i));
-		WriteLine(GetT(i));
-		WriteLine(GetS(i));
-		WriteLine();
+		Console.WriteLine(GetO(i));
+		Console.WriteLine(GetC(i));
+		Console.WriteLine(GetT(i));
+		Console.WriteLine(GetS(i));
+		Console.WriteLine();
 	}
 }

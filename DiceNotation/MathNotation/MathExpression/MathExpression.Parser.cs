@@ -4,21 +4,21 @@ using Helper;
 
 namespace MathNotation;
 
-public partial class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFunctions<T>, IRootFunctions<T>, IFloatingPoint<T>
+public partial class MathExpression<T> where T : unmanaged, INumber<T>, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
 {
 
 	#region Static Vars
 
-	private const char DECIMAL_SEPARATOR = '.';
-	private const char NAME_SEPARATOR = '_';
-	private const char NEGATE_SYMBOL = 'n';
+	public const char DECIMAL_SEPARATOR = '.';
+	public const char NAME_SEPARATOR = '_';
+	public const char NEGATE_SYMBOL = 'n';
 
-	private const char OPEN_BRACKET = '(';
-	private const char CLOSE_BRACKET = ')';
-	private const char PARAMETER_SEPARATOR = ',';
+	public const char OPEN_BRACKET = '(';
+	public const char CLOSE_BRACKET = ')';
+	public const char PARAMETER_SEPARATOR = ',';
 
-	private static readonly ImmutableDictionary<char, IToken> CharOperations;
-	private static readonly ImmutableDictionary<string, IToken> StringOperations;
+	public static readonly ImmutableDictionary<char, IToken> CharOperations;
+	public static readonly ImmutableDictionary<string, IToken> StringOperations;
 
 	#endregion
 
@@ -38,18 +38,26 @@ public partial class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFu
 			['*'] = new TokenBinaryOperator<T>((a, b) => a * b) { Precedence = 4 },
 			['/'] = new TokenBinaryOperator<T>((a, b) => a / b) { Precedence = 4 },
 			['%'] = new TokenBinaryOperator<T>((a, b) => a % b) { Precedence = 4 },
-			['^'] = new TokenBinaryOperator<T>(T.Pow) { Precedence = 6, RightAssociativity = true },
+			['^'] = new TokenBinaryOperator<T>((a, b) => T.CreateSaturating(Math.Pow(double.CreateSaturating(a), double.CreateSaturating(b)))) { Precedence = 6, RightAssociativity = true },
 		};
 
 		var s = new Dictionary<string, IToken>() {
-			["floor"] = new TokenUnary<T>(T.Floor) { Category = Category.Function },
-			["ceil"] = new TokenUnary<T>(T.Ceiling) { Category = Category.Function },
-			["round"] = new TokenUnary<T>(T.Round){ Category = Category.Function },
-			["sqtr"] = new TokenUnary<T>(T.Sqrt) { Category = Category.Function },
+			//TODO: ADD SUPPORT TO MATH CONSTS
+			//["E"] = new TokenNullary<TDice>(() => TDice.E) { Category = Category.Number },
+			//["PI"] = new TokenNullary<TDice>(() => TDice.E) { Category = Category.Number },
+			//["TAU"] = new TokenNullary<TDice>(() => TDice.Tau) { Category = Category.Number },
+
 			["abs"] = new TokenUnary<T>(T.Abs) { Category = Category.Function },
 			["min"] = new TokenBinary<T>(T.Min) { Category = Category.Function },
 			["max"] = new TokenBinary<T>(T.Max) { Category = Category.Function },
 			["clamp"] = new TokenTernary<T>(T.Clamp) { Category = Category.Function },
+			["sign"] = new TokenUnary<T>((a) => T.CreateChecked(T.Sign(a))) { Category = Category.Function },
+
+			["floor"] = new TokenUnary<T>(T.Floor) { Category = Category.Function },
+			["ceil"] = new TokenUnary<T>(T.Ceiling) { Category = Category.Function },
+			["round"] = new TokenUnary<T>(T.Round) { Category = Category.Function },
+			["sqtr"] = new TokenUnary<T>(T.Sqrt) { Category = Category.Function },
+			["root"] = new TokenBinary<T>((a, b) => T.RootN(a, int.CreateChecked(b))) { Category = Category.Function },
 		};
 
 		var cb = ImmutableDictionary.CreateBuilder<char, IToken>();
@@ -75,23 +83,22 @@ public partial class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFu
 	}
 
 	#region Static Methods
-	
-	private static bool IsName(char ch) => char.IsLetter(ch) || ch == NAME_SEPARATOR;
-	private static bool IsNumeric(char ch) => char.IsDigit(ch) || ch == DECIMAL_SEPARATOR;
+
+	public static bool IsVarName(char ch) => char.IsLetter(ch) || ch == NAME_SEPARATOR;
+	public static bool IsNumeric(char ch) => char.IsDigit(ch) || ch == DECIMAL_SEPARATOR;
 	//public static bool IsOperation(string str) => CharOperations.ContainsKey(str[0]) || StringOperations.ContainsKey(str);
-	
+
 	private static string CleanExpression(string expression)
 	{
 		if (string.IsNullOrWhiteSpace(expression))
 			throw new Exception("Empty Expression");
 
-		var sb = new StringBuilder(UtilString.CleanEquation(expression));
+		var sb = new StringBuilder(UtilString.RemoveWithspaceAndInsensive(expression));
 		return sb.Replace("+-", "-").Replace("-+", "-").Replace("--", "+").Replace("++", "+").ToString();
 	}
 	#endregion
 
-
-	public static StringBuilder InfixToExpression(IEnumerable<IToken> infix) 
+	public static StringBuilder InfixToExpression(IEnumerable<IToken> infix)
 	{
 		var sb = new StringBuilder();
 		foreach (var token in infix)
@@ -100,7 +107,8 @@ public partial class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFu
 		return sb;
 	}
 
-	public static Queue<IToken> ExpressionToInfix(string expression)
+	public static Queue<IToken> ExpressionToInfix(string expression) => ExpressionToInfix(expression.AsSpan()); 
+	public static Queue<IToken> ExpressionToInfix(ReadOnlySpan<char> expression)
 	{
 		Queue<IToken> infixTokens = new(3);
 
@@ -113,7 +121,7 @@ public partial class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFu
 			char ch = expression[i];
 
 			// #Number
-			if (char.IsDigit(ch) || ch == DECIMAL_SEPARATOR)
+			if (IsNumeric(ch))
 			{
 				bool isFloat = ch == DECIMAL_SEPARATOR;
 				buffer.Append(ch);
@@ -136,8 +144,8 @@ public partial class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFu
 				}
 
 				// Parse Number
-				var value = Number.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
-				infixTokens.Enqueue(new TokenNumber<Number>(value));
+				var value = T.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
+				infixTokens.Enqueue(new TokenNumber<T>(value));
 				buffer.Clear();
 			}
 			// #Brackets
@@ -183,7 +191,7 @@ public partial class MathExpression<T> where T : unmanaged, INumber<T>, IPowerFu
 				else if (hasLeft && IsNumeric(chL) && (!hasRight || (hasRight && (!IsNumeric(chR) && chR != OPEN_BRACKET))))
 					infixTokens.Enqueue(CharOperations[ch]);
 				// #Funcs
-				else if (IsName(ch) && hasRight)
+				else if (IsVarName(ch) && hasRight)
 				{
 					buffer.Append(ch);
 					//look-ahead for more text until find the bracket

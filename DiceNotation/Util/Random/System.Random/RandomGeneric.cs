@@ -1,4 +1,4 @@
-﻿namespace DiceNotation;
+﻿namespace Helper;
 
 public class RandomGeneric<T> : IRandom<T, int> where T : unmanaged, INumber<T>
 {

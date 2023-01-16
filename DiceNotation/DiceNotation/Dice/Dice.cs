@@ -1,6 +1,8 @@
-﻿namespace DiceNotation;
+﻿using Helper;
 
-public readonly struct Dice<T> where T : unmanaged, INumber<T>
+namespace DiceNotation;
+
+public readonly struct Dice<T> where T : INumber<T>
 {
 	public readonly T sides;
 

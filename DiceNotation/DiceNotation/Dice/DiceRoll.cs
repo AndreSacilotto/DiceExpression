@@ -1,6 +1,8 @@
-﻿namespace DiceNotation;
+﻿using Helper;
 
-public readonly struct DiceRoll<T, S> where T : unmanaged, INumber<T>
+namespace DiceNotation;
+
+public readonly record struct DiceRoll<T> where T : INumber<T>
 {
 	public readonly int times;
 	public readonly Dice<T> dice;
@@ -13,10 +15,10 @@ public readonly struct DiceRoll<T, S> where T : unmanaged, INumber<T>
 	public DiceRoll(int times, T sides) : this(times, new Dice<T>(sides)) { }
 
 	public override string ToString() => ToString(false);
-	public string ToString(bool hideIfOne)
+	public string ToString(bool hideTimesIfOne)
 	{
 		var str = "d" + dice.sides;
-		if (!hideIfOne && times <= 1)
+		if (hideTimesIfOne && times <= 1)
 			return str;
 		return times + str;
 	}

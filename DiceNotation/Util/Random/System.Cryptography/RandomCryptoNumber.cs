@@ -1,9 +1,9 @@
-﻿namespace DiceNotation;
+﻿namespace Helper;
 
 public class RandomCryptoNumber<T> : IRandomNumber<T> where T : INumber<T>
 {
-	//private static readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
-	//private static readonly byte[] buffer = new byte[sizeof(T)];
+	//private static readonly RandomNumberGenerator Random = RandomNumberGenerator.Create();
+	//private static readonly byte[] buffer = new byte[sizeof(TDice)];
 
 	public T Next()
 	{

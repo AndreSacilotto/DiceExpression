@@ -1,7 +1,9 @@
 ﻿
+using Helper;
+
 namespace MathNotation;
 
-public partial class MathExpression<T>
+public partial class MathExpression<T> : IExpression
 {
 	private readonly List<IToken> infix = new();
 	private Queue<IToken> postfix = null!;
@@ -27,14 +29,14 @@ public partial class MathExpression<T>
 
 	public MathExpression(IEnumerable<IToken> infixTokens)
 	{
-		infix.AddRange(infixTokens);
+		infix = new List<IToken>(infixTokens);
 		expressionBuilder = InfixToExpression(infix);
 	}
 
 	public MathExpression(string expression)
 	{
 		expression = CleanExpression(expression);
-		infix.AddRange(ExpressionToInfix(expression));
+		infix = new List<IToken>(ExpressionToInfix(expression));
 		expressionBuilder = new(expression);
 	}
 
