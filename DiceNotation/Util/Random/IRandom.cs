@@ -1,6 +1,6 @@
 ﻿namespace Helper;
 
-public interface ISeed<T> where T : struct
+public interface ISeed<T>
 {
 	T Seed { get; set; }
 }
@@ -15,6 +15,6 @@ public interface IRandomNumber<T> where T : INumber<T>
 	T Next(T min, T max);
 }
 
-public interface IRandom<T, TSeed> : IRandomNumber<T>, ISeed<TSeed> where T : INumber<T> where TSeed : struct
+public interface IRandom<T, TSeed> : IRandomNumber<T>, ISeed<TSeed> where T : INumber<T>
 {
 }

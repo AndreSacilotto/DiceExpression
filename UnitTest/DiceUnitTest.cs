@@ -6,14 +6,16 @@ public class DiceUnitTest
 {
 	private static IRandomNumber<int> rng = new RandomInt(1000);
 
+	private static readonly int[] realWorldDices = new int[] { 2, 4, 6, 8, 10, 12, 16, 20 };
+
+	public static IEnumerable<object[]> DefaultDices()
+	{
+		foreach (var item in realWorldDices)
+			yield return new object[] { item };
+	}
+
 	[Theory]
-	[InlineData(2)]
-	[InlineData(4)]
-	[InlineData(6)]
-	[InlineData(8)]
-	[InlineData(10)]
-	[InlineData(12)]
-	[InlineData(20)]
+	[MemberData(nameof(DefaultDices))]
 	public void Dice(int sides)
 	{
 		var d = new Dice<int>(sides);
@@ -21,14 +23,15 @@ public class DiceUnitTest
 			Assert.InRange(d.Roll(rng), 1, sides);
 	}
 
+
+	public static IEnumerable<object[]> DefaultRolls()
+	{
+		foreach (var item in realWorldDices)
+			yield return new object[] { rng.Next(10), item };
+	}
+
 	[Theory]
-	[InlineData(5, 2)]
-	[InlineData(5, 4)]
-	[InlineData(5, 6)]
-	[InlineData(5, 8)]
-	[InlineData(5, 10)]
-	[InlineData(5, 12)]
-	[InlineData(5, 20)]
+	[MemberData(nameof(DefaultRolls))]
 	public void DiceRoll(int times, int sides)
 	{
 		var d = new DiceRoll<int, int>(times, sides);

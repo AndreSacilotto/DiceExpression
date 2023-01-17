@@ -6,66 +6,88 @@ using System.Runtime.InteropServices;
 namespace DiceNotation;
 
 
-public partial class DiceReader<T> where T : INumber<T>
+public partial class DiceReader<T> where T : IBinaryInteger<T>
 {
-
-	//[1]|d|[3]|{[4]}|
-	[GeneratedRegex(@"(\d*)d(\d+)(?:{(.*?)})?", RegexOptions.CultureInvariant)]
-	private static partial Regex DiceExpressionParser();
-
-	public static Regex DiceParser { get; } = DiceExpressionParser();
-
 	private const char OPEN_BRACKET = '{';
 	private const char CLOSE_BRACKET = '}';
 	private const char PARAM_SEPARATOR = ',';
 	private const char DICE_OPERATOR = 'd';
 
-	public static DiceRollResult<T>[] ParseDice(string diceExpression)
+	//[1]d[2]{[3]}
+	[GeneratedRegex(@"(\d*)d(\d+)(?:{(.*?)})?", RegexOptions.CultureInvariant)]
+	private static partial Regex DiceExpressionParser();
+
+	public static readonly Regex DiceParser = DiceExpressionParser();
+
+	public record class DiceRollExpression(string Expression, DiceRoll<T> Dice, string[] Args);
+
+	public static DiceRollExpression[] ParseDice(string expression, out StringBuilder noDiceExpression)
 	{
-		diceExpression = UtilString.RemoveWithspaceAndInsensive(diceExpression);
+		expression = UtilString.RemoveWithspaceAndInsensive(expression);
 
-		var matches = DiceParser.Matches(diceExpression);
+		var matches = DiceParser.Matches(expression);
 
-		var dices = new DiceRollResult<T>[matches.Count];
+		noDiceExpression = UtilString.RegexRemoveGroupsForFormat(new(expression), matches);
+
+		var dices = new DiceRollExpression[matches.Count];
 
 		for (int i = 0; i < matches.Count; i++)
 		{
 			var match = matches[i];
 			//Group[0] is the Match, so $1..N is the captures 
-			var captures = match.Groups.Values.Skip(1).ToArray();
+			var groups = match.Groups;
 
-			int times;
-			T sides;
-			string[] args;
+			var times = groups[1].ValueSpan.IsEmpty ? 1 : int.Parse(groups[1].ValueSpan, CultureInfo.InvariantCulture);
 
-			//Console.WriteLine((captures[0].ValueSpan == ReadOnlySpan<char>.Empty) + " + " + (captures[0].ValueSpan == null));
-			//Console.WriteLine((captures[0].ValueSpan.IsEmpty) + " + " + (captures[0].ValueSpan.IsWhiteSpace()));
-			//Console.WriteLine((captures[0].Value == string.Empty) + " + " + (captures[0].Value == null));
+			var sides = T.Parse(groups[2].ValueSpan, CultureInfo.InvariantCulture);
 
-			times = captures[0].ValueSpan.IsEmpty ? 1 : int.Parse(captures[0].ValueSpan, CultureInfo.InvariantCulture);
+			var args = groups[3].ValueSpan.IsEmpty ? Array.Empty<string>() : groups[3].Value.Split(PARAM_SEPARATOR);
 
-			sides = T.Parse(captures[1].ValueSpan, CultureInfo.InvariantCulture);
-
-			args = captures[2].ValueSpan.IsEmpty ? Array.Empty<string>() : captures[2].Value.Split(PARAM_SEPARATOR);
-
-			dices[i] = ReadDice(match.ValueSpan, times, sides, args);
+			dices[i] = new DiceRollExpression(match.Value, new DiceRoll<T>(times, sides), args);
 		}
 
 		return dices;
 	}
 
-
-	public static DiceRollResult<T> ReadDice(ReadOnlySpan<char> expression, int times, T sides, params string[] args)
+	public static T CalculateDiceRollResult(DiceRollExpression diceExpression, IRandomNumber<T> random)
 	{
-		var dice = new DiceRollResult<T>(expression.ToString(), new DiceRoll<T>(times, sides));
-
-		return dice;
+		return diceExpression.Dice.RollAndSum(random);
 	}
 
-}
-public record class DiceRollResult<T>(string Expression, DiceRoll<T> Dice) where T : INumber<T>;
 
-//public record class DiceRollResult<TDice>(string Expression, DiceRoll<TDice> Dice, TDice[] Rolls, TDice Result) where TDice : INumber<TDice> 
-//{ 
+	public static StringBuilder CalculateDiceRollExpression(DiceRollExpression diceExpression, IRandomNumber<T> random, string separator = " + ")
+	{
+		var rolls = diceExpression.Dice.Roll(random);
+		var sb = new StringBuilder(rolls.Length);
+		sb.Append('(');
+		for (int i = 0; i < rolls.Length-1; i++)
+			sb.Append(rolls[i].ToString() + separator);
+		sb.Append(rolls[rolls.Length-1].ToString() + ')');
+		return sb;
+	}
+
+	//public static DiceRollExpression<T> CalculateDiceRollExpression(DiceRollExpression<T> diceExpression)
+	//{
+	//	var diceRoll = new DiceRoll<T>(times, sides);
+	//	var dre = new DiceRollExpression<T>(expression.ToString(), diceRoll);
+
+	//	var rolled = diceRoll.Roll(rng);
+
+	//	var rolls = new List<T>(diceRoll.Roll(rng));
+	//	rolls.Sort(); // ascending order (small -> big)
+	//	foreach (var item in args)
+	//		GenerateFunc(item, rolls, rng);
+
+	//	return dre;
+	//}
+
+
+
+
+}
+
+
+//public record struct DiceRollRolls<T>(DiceRollExpression<T> Dice, T[] Rolls, T Result) where T : INumber<T>
+//{
 
 //}

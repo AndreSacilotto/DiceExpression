@@ -1,6 +1,6 @@
 ﻿namespace Helper;
 
-public class RandomGeneric<T> : IRandom<T, int> where T : unmanaged, INumber<T>
+public class RandomGeneric<T> : IRandom<T, int> where T : INumber<T>
 {
 	private Random rng = null!;
 	private int seed;

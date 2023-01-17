@@ -36,7 +36,7 @@ public partial class MathExpression<T> : IExpression
 	public MathExpression(string expression)
 	{
 		expression = CleanExpression(expression);
-		infix = new List<IToken>(ExpressionToInfix(expression));
+		infix = new List<IToken>(ExpressionToInfix(expression.AsSpan()));
 		expressionBuilder = new(expression);
 	}
 
@@ -67,10 +67,9 @@ public partial class MathExpression<T> : IExpression
 
 	public void AddExpression(string expression)
 	{
-		expression = CleanExpression(expression);
-
-		infix.AddRange(ExpressionToInfix(expression));
-		expressionBuilder.Append(expression);
+		var expSpan = CleanExpression(expression).AsSpan();
+		infix.AddRange(ExpressionToInfix(expSpan));
+		expressionBuilder.Append(expSpan);
 
 		dirty = true;
 	}

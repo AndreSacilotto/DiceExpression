@@ -20,13 +20,31 @@ internal class Program
 		//	new(rng, "1d6"),
 		//};
 
-		var parser = DiceReader<int>.ParseDice("2d20{H3}+2D6+d6{L<2}");
+		//var parser = DiceReader<int>.ParseDice("2d20{H3, C(<2,>2,=2,)}+2D6+d6{L<2}+2-(10/6-4)*3%floor(e * r)", out var no);
+		var parser = DiceReader<int>.ParseDice("2d20+d6", out var no);
+
+		var e = new StringBuilder[parser.Length];
+		var r = new object[parser.Length];
+
+		for (int i = 0; i < parser.Length; i++)
+		{
+			var item = parser[i];
+			WriteLine(item);
+
+			e[i] = DiceReader<int>.CalculateDiceRollExpression(item, rng);
+			r[i] = DiceReader<int>.CalculateDiceRollResult(item, rng);
+
+			WriteLine(e[i] + " | " + r[i]);
+		}
+
+		var w1 = string.Format(no.ToString(), e);
+		var w2 = string.Format(no.ToString(), r);
 
 		var exp = new MathExpression<double>[]
 		{
-			new MathExpression<double>("5+5"),
-			new MathExpression<double>("-(10 / 2.5)"),
-			new MathExpression<double>("20 + (-10 / 2.5)"),
+			//new MathExpression<double>("5+5"),
+			new MathExpression<double>(w1),
+			//new MathExpression<double>(w2),
 		};
 
 		//exp[0].AddNumber(10.0);
@@ -39,5 +57,6 @@ internal class Program
 			var equation = item.Expression.PadRight(width);
 			Console.WriteLine($"{equation} = {item.Evaluate()}");
 		}
+
 	}
 }

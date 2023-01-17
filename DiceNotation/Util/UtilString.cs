@@ -1,6 +1,8 @@
-﻿namespace Helper;
+﻿using System.Text.RegularExpressions;
 
-public partial class UtilString
+namespace Helper;
+
+public static partial class UtilString
 {
 	[GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
 	private static partial Regex Whitespace();
@@ -8,6 +10,20 @@ public partial class UtilString
 
 	public static string RemoveWithspaceAndInsensive(string input) => 
 		WhitespaceRegex.Replace(input, string.Empty).ToLower();
+
+
+	public static StringBuilder Replace(this StringBuilder input, int index, int length, string replacement) => 
+		input.Remove(index, length).Insert(index, replacement);
+
+	public static StringBuilder RegexRemoveGroupsForFormat(StringBuilder input, MatchCollection regexMatchs) 
+	{
+		for (int i = regexMatchs.Count - 1; i >= 0; i--)
+		{
+			var match = regexMatchs[i];
+			Replace(input, match.Index, match.Length, $"{{{i}}}");
+		}
+		return input;
+	}
 
 	#region Char&To&String
 	public static bool IsDigit(string input) => IsDigit(input.AsSpan());

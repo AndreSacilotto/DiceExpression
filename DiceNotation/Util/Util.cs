@@ -2,10 +2,11 @@
 
 namespace Helper;
 
-public static class Util
+public static class UtilCollections
 {
 	public static void TrimExcess(this StringBuilder sb) => sb.Capacity = sb.Length;
 
+	#region AddRange
 	public static void AddRange<T>(this Queue<T> queue, IEnumerable<T> enumerable)
 	{
 		foreach (T obj in enumerable)
@@ -29,6 +30,7 @@ public static class Util
 		foreach (T obj in enumerable)
 			stack.Push(obj);
 	}
+	#endregion
 
 	public static T[] Combine<T>(T[] first, T[] second) where T : unmanaged
 	{
@@ -38,4 +40,26 @@ public static class Util
 		Buffer.BlockCopy(second, 0, arr, first.Length, second.Length * size);
 		return arr;
 	}
+
+	#region Shuffle
+	public static void Shuffle<T>(T[] array, IRandomNumber<int> rng)
+	{
+		int i = array.Length;
+		while (i > 1)
+		{
+			int j = rng.Next(i--);
+			(array[j], array[i]) = (array[i], array[j]);
+		}
+	}
+	public static void Shuffle<T>(List<T> list, IRandomNumber<int> rng)
+	{
+		int i = list.Count;
+		while (i > 1)
+		{
+			int j = rng.Next(i--);
+			(list[j], list[i]) = (list[i], list[j]);
+		}
+	}
+	#endregion
+
 }

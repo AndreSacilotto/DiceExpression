@@ -14,6 +14,7 @@ public class MathExpressionUnitTest
 		yield return new object[] { "(-2)-3", -5 };
 		yield return new object[] { "-(-4)", 4 };
 		yield return new object[] { "-(+(+6))", -6 };
+		yield return new object[] { "-(10 / 2.5)", -4.0 };
 		yield return new object[] { "8-5+(-(3))", 0 };
 		yield return new object[] { "-30/-3", 10 };
 		yield return new object[] { "(-50)/-(-25)", -2 };
