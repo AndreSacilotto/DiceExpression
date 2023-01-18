@@ -21,7 +21,7 @@ internal class Program
 		//};
 
 		//var parser = DiceReader<int>.ParseDice("2d20{H3, C(<2,>2,=2,)}+2D6+d6{L<2}+2-(10/6-4)*3%floor(e * r)", out var no);
-		var parser = DiceReader<int>.ParseDice("2d20+d6", out var no);
+		var parser = DiceReader<int>.ParseDice("2d10", out var no);
 
 		var e = new StringBuilder[parser.Length];
 		var r = new object[parser.Length];
@@ -42,9 +42,8 @@ internal class Program
 
 		var exp = new MathExpression<double>[]
 		{
-			//new MathExpression<double>("5+5"),
-			new MathExpression<double>(w1),
-			//new MathExpression<double>(w2),
+			new MathExpression<double>("min(3, 10.5)!+1"),
+			//new MathExpression<double>(w1),
 		};
 
 		//exp[0].AddNumber(10.0);

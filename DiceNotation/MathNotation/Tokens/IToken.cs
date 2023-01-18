@@ -6,7 +6,10 @@ public interface IToken
 	string Name { get; }
 }
 
-
+public interface ITokenNumber<T> : IToken where T : INumber<T>
+{
+	T Number { get; }
+}
 
 public interface ITokenPrecedence : IToken
 {
@@ -28,7 +31,5 @@ public interface ITokenPrecedence : IToken
 /// Senary = 6-ary<br/>Septenary = 7-ary<br/>
 /// Octary = 8-ary<br/>Nonary = 9-ary<br/>...
 /// </summary>
-public interface ITokenNAry : IToken
-{
+public interface ITokenNAry : IToken { }
 
-}

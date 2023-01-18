@@ -62,4 +62,25 @@ public static class UtilCollections
 	}
 	#endregion
 
+
+	public static bool TryFindValue<K, V>(K key, out V value, params IDictionary<K, V>[] dicts) where K : notnull
+	{
+		foreach (var dict in dicts)
+			if (dict.TryGetValue(key, out var v))
+			{
+				value = v;
+				return true;
+			}
+		value = default!;
+		return false;
+	}
+	public static K? TryFindKey<K, V>(V value, params IDictionary<K, V>[] dicts) where K : notnull where V : IEquatable<V>
+	{
+		foreach (var dict in dicts)
+			foreach (var item in dict)
+				if (value.Equals(item.Value))
+					return item.Key;
+		return default;
+	}
+
 }

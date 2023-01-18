@@ -83,13 +83,13 @@ public partial class MathExpression<T>
 	{
 		Stack<IToken> stack = new(3);
 
-		var open = CharOperations[OPEN_BRACKET];
-		var close = CharOperations[CLOSE_BRACKET];
-		var argSpt = CharOperations[PARAMETER_SEPARATOR];
+		var open = Separators[OPEN_BRACKET];
+		var close = Separators[CLOSE_BRACKET];
+		var argSpt = Separators[PARAMETER_SEPARATOR];
 
 		foreach (var token in postfix)
 		{
-			if (token is TokenNumber<T>)
+			if (token is ITokenNumber<T>)
 			{
 				stack.Push(token);
 			}
@@ -175,17 +175,21 @@ public partial class MathExpression<T>
 
 	public static T PosfixEvaluation(IEnumerable<IToken> postfix)
 	{
-		var stack = new Stack<TokenNumber<T>>(3);
+		var stack = new Stack<ITokenNumber<T>>(3);
 
 		foreach (var token in postfix)
 		{
-			if (token is TokenNumber<T> tn)
+			if (token is ITokenNumber<T> tn)
 				stack.Push(tn);
 			else if (token is ITokenNAry)
 			{
 				T PopNumber() => stack.Pop().Number;
 
 				T value;
+				if (token is TokenNullary<T> tzero)
+				{
+					value = tzero.NullaryFunction();
+				}
 				if (token is TokenUnary<T> tu)
 				{
 					var a = PopNumber();

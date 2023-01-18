@@ -5,7 +5,7 @@ namespace MathNotation;
 
 public partial class MathExpression<T> : IExpression
 {
-	private readonly List<IToken> infix = new();
+	private readonly List<IToken> infix;
 	private Queue<IToken> postfix = null!;
 
 	private readonly StringBuilder expressionBuilder;
@@ -36,7 +36,7 @@ public partial class MathExpression<T> : IExpression
 	public MathExpression(string expression)
 	{
 		expression = CleanExpression(expression);
-		infix = new List<IToken>(ExpressionToInfix(expression.AsSpan()));
+		infix = ExpressionToInfix(expression.AsSpan());
 		expressionBuilder = new(expression);
 	}
 
@@ -79,9 +79,9 @@ public partial class MathExpression<T> : IExpression
 		infix.Add(new TokenNumber<T>(number));
 		dirty = true;
 	}
-	public bool AddOperation(char opr)
+	public bool AddOperation(char opt)
 	{
-		if (CharOperations.TryGetValue(opr, out var token))
+		if (UtilCollections.TryFindValue(opt, out var token, Separators, PrefixOperators, PosfixOperators, Operators))
 		{
 			infix.Add(token);
 			expressionBuilder.Append(token.Name);
@@ -90,15 +90,19 @@ public partial class MathExpression<T> : IExpression
 		}
 		return false;
 	}
-	public bool AddOperation(string opr)
+	public bool AddOperation(string opt)
 	{
-		if (CharOperations.TryGetValue(opr[0], out var token) || StringOperations.TryGetValue(opr, out token))
+		if (opt.Length == 1)
+			return AddOperation(opt[0]);
+		
+		if (UtilCollections.TryFindValue(opt, out var token, Constants, Functions))
 		{
 			infix.Add(token);
 			expressionBuilder.Append(token.Name);
 			dirty = true;
 			return true;
 		}
+
 		return false;
 	}
 
