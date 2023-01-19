@@ -1,6 +1,6 @@
 ﻿namespace MathNotation;
 
-[Flags]
+//[Flags]
 public enum Category : int
 {
 	None = 0,

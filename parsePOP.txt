@@ -1,0 +1,26 @@
+
+N|C [Number/constant]
+(
+)
+,
+func() [Func]
+*/  [Operator]
+-|+ [Pre]
+!
+
+=====================
+
+[ (,OP ] P
+
+[ N)F! ] O	{Impossible P}
+
+[ N)F! ] !	{Imposible ( or P }
+
+
+=====================
+
+P [ N(FP ]
+
+O [ N(FP ]
+
+! [ ),O! ]

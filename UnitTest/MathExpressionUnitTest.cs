@@ -10,6 +10,8 @@ public class MathExpressionUnitTest
 		yield return new object[] { "ceil(2.5 ^ 2.5)", 10 };
 		yield return new object[] { "floor(3.5)", 3 };
 		yield return new object[] { "ceil((3+.5))", 4 };
+		yield return new object[] { "4!", 24 };
+		yield return new object[] { "1+3!+1", 8 };
 		yield return new object[] { "-10", -10 };
 		yield return new object[] { "(-2)-3", -5 };
 		yield return new object[] { "-(-4)", 4 };
@@ -20,6 +22,9 @@ public class MathExpressionUnitTest
 		yield return new object[] { "(-50)/-(-25)", -2 };
 		yield return new object[] { "10!", 3628800 };
 		yield return new object[] { "clamp(-100, 2., 35)", 2.0 };
+		yield return new object[] { "e + (pi * tau)", 22.457 };
+		yield return new object[] { "min(3, 10.5)!+1", 7 };
+		yield return new object[] { "-max(PI, TAU)", -6.283 };
 	}
 
 	[Theory]

@@ -8,6 +8,13 @@ namespace Main;
 
 internal class Program
 {
+
+
+	public List<KeyValuePair<string, float>> list = new List<KeyValuePair<string, float>>() {
+		new KeyValuePair<string, float>("enemy", 1f),
+		new KeyValuePair<string, float>("enemy", 1f),
+	};
+
 	static void Main()
 	{
 		CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
@@ -42,7 +49,8 @@ internal class Program
 
 		var exp = new MathExpression<double>[]
 		{
-			new MathExpression<double>("min(3, 10.5)!+1"),
+			//new MathExpression<double>("5+(+5)"),
+			new MathExpression<double>("e+pi"),
 			//new MathExpression<double>(w1),
 		};
 

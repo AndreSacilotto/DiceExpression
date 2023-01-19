@@ -1,4 +1,5 @@
 using DiceNotation;
+using Helper;
 
 namespace XTesting;
 
@@ -34,7 +35,7 @@ public class DiceUnitTest
 	[MemberData(nameof(DefaultRolls))]
 	public void DiceRoll(int times, int sides)
 	{
-		var d = new DiceRoll<int, int>(times, sides);
+		var d = new DiceRoll<int>(times, sides);
 		for (int i = sides * 3; i >= 0; i--)
 			Assert.InRange(d.RollAndSum(rng), times, sides * times);
 	}

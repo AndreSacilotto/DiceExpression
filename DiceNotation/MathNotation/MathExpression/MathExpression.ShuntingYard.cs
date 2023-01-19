@@ -70,7 +70,6 @@ public partial class MathExpression<T>
 				default:
 				throw new Exception($"The token of {token.Category} category dont exist");
 			}
-
 		}
 
 		while (stack.TryPop(out var peek))
@@ -79,6 +78,57 @@ public partial class MathExpression<T>
 		return output;
 	}
 
+	public static T PosfixEvaluation(IEnumerable<IToken> postfix)
+	{
+		var stack = new Stack<ITokenNumber<T>>(3);
+
+		foreach (var token in postfix)
+		{
+			if (token is ITokenNumber<T> tn)
+				stack.Push(tn);
+			else if (token is ITokenNAry)
+			{
+				T PopNumber() => stack.Pop().Number;
+
+				T value;
+				if (token is TokenNullary<T> tzero)
+				{
+					value = tzero.NullaryFunction();
+				}
+				if (token is TokenUnary<T> tu)
+				{
+					var a = PopNumber();
+					value = tu.UnaryFunction(a);
+				}
+				else if (token is TokenBinary<T> tb)
+				{
+					var b = PopNumber();
+					var a = PopNumber();
+					value = tb.BinaryFunction(a, b);
+				}
+				else if (token is TokenTernary<T> tt)
+				{
+					var c = PopNumber();
+					var b = PopNumber();
+					var a = PopNumber();
+					value = tt.TernaryFunction(a, b, c);
+				}
+				else
+					throw new Exception($"The {token} is not a valid operation");
+
+				stack.Push(new TokenNumber<T>(value));
+			}
+			else
+				throw new Exception($"The token {token} category dont exist");
+
+		}
+
+		if (stack.Count != 1)
+			throw new Exception("Too many tokens on stack, invalid formula");
+
+		return stack.Pop().Number;
+	}
+	
 	public static Stack<IToken> PostfixToInfix(IEnumerable<IToken> postfix)
 	{
 		Stack<IToken> stack = new(3);
@@ -172,56 +222,4 @@ public partial class MathExpression<T>
 
 		return stack;
 	}
-
-	public static T PosfixEvaluation(IEnumerable<IToken> postfix)
-	{
-		var stack = new Stack<ITokenNumber<T>>(3);
-
-		foreach (var token in postfix)
-		{
-			if (token is ITokenNumber<T> tn)
-				stack.Push(tn);
-			else if (token is ITokenNAry)
-			{
-				T PopNumber() => stack.Pop().Number;
-
-				T value;
-				if (token is TokenNullary<T> tzero)
-				{
-					value = tzero.NullaryFunction();
-				}
-				if (token is TokenUnary<T> tu)
-				{
-					var a = PopNumber();
-					value = tu.UnaryFunction(a);
-				}
-				else if (token is TokenBinary<T> tb)
-				{
-					var b = PopNumber();
-					var a = PopNumber();
-					value = tb.BinaryFunction(a, b);
-				}
-				else if (token is TokenTernary<T> tt)
-				{
-					var c = PopNumber();
-					var b = PopNumber();
-					var a = PopNumber();
-					value = tt.TernaryFunction(a, b, c);
-				}
-				else
-					throw new Exception($"The {token} is not a valid operation");
-
-				stack.Push(new TokenNumber<T>(value));
-			}
-			else
-				throw new Exception($"The token {token} category dont exist");
-
-		}
-
-		if (stack.Count != 1)
-			throw new Exception("Too many tokens on stack, invalid formula");
-
-		return stack.Pop().Number;
-	}
-
 }

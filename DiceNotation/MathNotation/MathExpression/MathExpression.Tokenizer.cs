@@ -43,9 +43,10 @@ public partial class MathExpression<T>
 		int bracketCount = 0;
 
 		var expLength = expression.Length;
-		IToken? tk = null;
+		IToken? priorToken = null;
 		for (int i = 0; i < expLength; i++)
 		{
+			IToken? tk;
 			char ch = expression[i];
 
 			// #Number
@@ -72,59 +73,64 @@ public partial class MathExpression<T>
 				}
 
 				// Parse Number
-				var value = T.Parse(buffer.ToString(), CultureInfo.InvariantCulture);
-				infixTokens.Add(new TokenNumber<T>(value));
-				buffer.Clear();
+				var value = T.Parse(buffer.ToStringAndClear(), CultureInfo.InvariantCulture);
+				tk = new TokenNumber<T>(value);
+				infixTokens.Add(tk);
 			}
 			// #Separators
 			else if (ch == OPEN_BRACKET)
 			{
-				infixTokens.Add(Separators[ch]);
+				tk = Separators[ch];
+				infixTokens.Add(tk);
 				bracketCount++;
 			}
 			else if (ch == CLOSE_BRACKET)
 			{
-				infixTokens.Add(Separators[ch]);
+				tk = Separators[ch];
+				infixTokens.Add(tk);
 				bracketCount--;
 			}
 			else if (ch == PARAMETER_SEPARATOR)
 			{
-				infixTokens.Add(Separators[ch]);
+				tk = Separators[ch];
+				infixTokens.Add(tk);
 			}
 			else
 			{
-				bool lastWasNumberic = tk != null && (tk.Category & (Category.Number | Category.CloseBracket | Category.PostOperator)) != 0;
+				bool priorWasNumberic = priorToken != null && (priorToken.Category & (Category.Number | Category.CloseBracket | Category.Function | Category.PostOperator)) != 0;
 
 				int r = i + 1;
 				bool hasRight = r < expLength;
 
-				char chR;
-				bool nextIsNumeric;
+				bool nextIsNumber;
+				bool nextIsNotNumber;
 				if (hasRight)
 				{
-					chR = expression[r];
-					nextIsNumeric = chR == OPEN_BRACKET || IsDigitF(chR) || (!IsVarName(ch) && IsVarName(chR));
+					var chR = expression[r];
+					nextIsNumber = chR == OPEN_BRACKET || IsDigitF(chR) || IsVarName(chR) || PrefixOperators.ContainsKey(chR);
+					nextIsNotNumber = chR == CLOSE_BRACKET || chR == PARAMETER_SEPARATOR || Operators.ContainsKey(chR) || PosfixOperators.ContainsKey(chR);
 				}
 				else
 				{
-					chR = default;
-					nextIsNumeric = false;
+					nextIsNumber = false;
+					nextIsNotNumber = false;
 				}
 
 				// #Unary-Pre-Operators
-				if ((i == 0 || !lastWasNumberic) && nextIsNumeric && PrefixOperators.TryGetValue(ch, out tk))
+				if ((priorToken == null || (priorToken.Category & (Category.OpenBracket | Category.ParamSeparator | Category.Operator | Category.PreOperator)) != 0)
+					&& nextIsNumber && PrefixOperators.TryGetValue(ch, out tk))
 				{
 					if (ch == '+')
 						continue;
 					infixTokens.Add(tk);
 				}
 				// #Binary-Operators
-				else if (lastWasNumberic && (nextIsNumeric || PrefixOperators.ContainsKey(chR)) && Operators.TryGetValue(ch, out tk))
+				else if (priorWasNumberic && nextIsNumber && Operators.TryGetValue(ch, out tk))
 				{
 					infixTokens.Add(tk);
-				}
+		}
 				// #Unary-Pos-Operator
-				else if (lastWasNumberic && !nextIsNumeric && PosfixOperators.TryGetValue(ch, out tk)) 
+				else if (priorWasNumberic && (!hasRight || nextIsNotNumber) && PosfixOperators.TryGetValue(ch, out tk)) 
 				{ 
 					infixTokens.Add(tk);
 				}
@@ -137,7 +143,7 @@ public partial class MathExpression<T>
 					for (i++; i < expLength; i++)
 					{
 						ch = expression[i];
-						if (Separators.ContainsKey(ch) || Operators.ContainsKey(ch)) 
+						if (Separators.ContainsKey(ch)|| Operators.ContainsKey(ch) /*|| PrefixOperators.ContainsKey(ch)*/) 
 						{
 							i--;
 							isFunction = ch == OPEN_BRACKET;
@@ -146,7 +152,7 @@ public partial class MathExpression<T>
 						buffer.Append(ch);
 					}
 
-					var str = buffer.ToString();
+					var str = buffer.ToStringAndClear();
 					if (isFunction && Functions.TryGetValue(str, out tk)) { 
 						infixTokens.Add(tk);
 					}					
@@ -155,14 +161,12 @@ public partial class MathExpression<T>
 					}
 					else
 						throw new Exception($"Function or Constant: '{str}' dont exist");
-
-					buffer.Clear();
 				}
 				else
 					throw new Exception($"Invalid equation or character: '{ch}'");
 			}
 
-			tk = infixTokens[^1];
+			priorToken = tk;
 		}
 
 		if (bracketCount != 0)

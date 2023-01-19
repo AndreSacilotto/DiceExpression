@@ -12,13 +12,12 @@ public partial class MathExpression<T> where T : unmanaged, INumber<T>, IFloatin
 
 	public const char DECIMAL_SEPARATOR = '.';
 	public const char NAME_SEPARATOR = '_';
-	public const char NEGATE_SYMBOL = 'n';
 
 	public const char OPEN_BRACKET = '(';
 	public const char CLOSE_BRACKET = ')';
 	public const char PARAMETER_SEPARATOR = ',';
 
-	public static readonly Dictionary<char, IToken> Separators;
+	public static readonly ImmutableDictionary<char, IToken> Separators;
 	public static readonly Dictionary<char, IToken> PosfixOperators;
 	public static readonly Dictionary<char, IToken> PrefixOperators;
 	public static readonly Dictionary<char, IToken> Operators;
@@ -29,19 +28,33 @@ public partial class MathExpression<T> where T : unmanaged, INumber<T>, IFloatin
 
 	static MathExpression()
 	{
-		static void KeyToName<K, V>(Dictionary<K, V> dict) where K : notnull where V : IToken
+		static Dictionary<K, V> KeyToName<K, V>(Dictionary<K, V> dict) where K : notnull where V : IToken
 		{
 			foreach (var item in dict)
-				if(item.Value is TokenBasic tb)
+			{
+				if (item.Value is TokenBasic tb)
 					tb.Name = item.Key.ToString() + "";
+			}
+			return dict;
 		}
 
-		Separators = new() {
+		static ImmutableDictionary<K, V> KeyToNameImmutable<K, V>(Dictionary<K, V> dict) where K : notnull where V : IToken
+		{
+			var builder = ImmutableDictionary.CreateBuilder<K, V>();
+			foreach (var item in dict)
+			{
+				if (item.Value is TokenBasic tb)
+					tb.Name = item.Key.ToString() + "";
+				builder.Add(item);
+			}
+			return builder.ToImmutable();
+		}
+
+		Separators = KeyToNameImmutable<char, IToken>(new() {
 			[OPEN_BRACKET] = new TokenBasic(Category.OpenBracket),
 			[CLOSE_BRACKET] = new TokenBasic(Category.CloseBracket),
 			[PARAMETER_SEPARATOR] = new TokenBasic(Category.ParamSeparator),
-		};
-		KeyToName(Separators);
+		});
 
 		PrefixOperators = new() {
 			['+'] = new TokenUnary<T>((a) => a) { Category = Category.PreOperator },

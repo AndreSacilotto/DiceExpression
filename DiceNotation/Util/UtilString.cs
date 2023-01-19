@@ -12,8 +12,17 @@ public static partial class UtilString
 		WhitespaceRegex.Replace(input, string.Empty).ToLower();
 
 
+	#region String Builder
+
 	public static StringBuilder Replace(this StringBuilder input, int index, int length, string replacement) => 
 		input.Remove(index, length).Insert(index, replacement);
+
+	public static string ToStringAndClear(this StringBuilder input) 
+	{
+		var str = input.ToString();
+		input.Clear();
+		return str;
+	}
 
 	public static StringBuilder RegexRemoveGroupsForFormat(StringBuilder input, MatchCollection regexMatchs) 
 	{
@@ -24,6 +33,8 @@ public static partial class UtilString
 		}
 		return input;
 	}
+
+	#endregion
 
 	#region Char&To&String
 	public static bool IsDigit(string input) => IsDigit(input.AsSpan());
